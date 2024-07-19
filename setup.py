@@ -1,4 +1,8 @@
 from setuptools import setup
 
 
-setup()
+setup(entry_points="""
+[pretix.plugin]
+pretix_xpay=pretix_xpay:PretixPluginMeta
+"""
+)
