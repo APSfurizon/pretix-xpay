@@ -1,0 +1,5 @@
+recursive-include pretix_xpay/static *
+recursive-include pretix_xpay/templates *
+recursive-include pretix_xpay/locale *
+include LICENSE
+exclude .gitlab-ci.yml
