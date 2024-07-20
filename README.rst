@@ -13,6 +13,7 @@ Flow chart
 - Nexi will land user on custom view:
 
 On custom view:
+
 - retrive order using the orderId (reverse the algorithm)
 - check if preauth is successfull
 - confirm order (order.confirm())
