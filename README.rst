@@ -5,6 +5,21 @@ This is a plugin for `pretix`_.
 
 Accept payments through the Nexi's XPay interface
 
+Flow chart
+----------
+- Arrive to execute payment https://docs.pretix.eu/en/latest/development/api/payment.html#pretix.base.payment.pretix.base.payment.BasePaymentProvider.BasePaymentProvider.execute_payment
+- Post /hpp with url to custom view with order id generation, PREAUTH, get hostedPage
+- Return hostedPage, so the user is redirected
+- Nexi will land user on custom view:
+
+On custom view:
+- retrive order using the orderId (reverse the algorithm)
+- check if preauth is successfull
+- confirm order (order.confirm())
+- if not Quota.QuotaExceededException, call /captures
+- else, call /refunds
+
+
 Development setup
 -----------------
 
