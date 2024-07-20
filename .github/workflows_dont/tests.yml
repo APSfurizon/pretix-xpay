@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main, master ]
     paths-ignore:
-      - 'pretix_ogone/locale/**'
+      - 'pretix_xpay/locale/**'
   pull_request:
     branches: [ main, master ]
     paths-ignore:
-      - 'pretix_ogone/locale/**'
+      - 'pretix_xpay/locale/**'
 
 jobs:
   test:

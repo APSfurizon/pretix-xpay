@@ -10,17 +10,19 @@ except ImportError:
 
 class PluginApp(PluginConfig):
     default = True
-    name = "pretix_xpay"
+    name = "pretix_XPay"
     verbose_name = "XPay"
 
     class PretixPluginMeta:
         name = gettext_lazy("XPay")
-        author = "Furizon Team"
-        description = gettext_lazy("Accept payments through the Nexi's XPay interface")
+        author = "pretix team"
+        description = gettext_lazy(
+            "Accept payments through the Nexi's XPay interface"
+        )
         visible = True
         version = __version__
         category = "PAYMENT"
-        compatibility = "pretix>=2.7.0"
+        compatibility = "pretix>=2024.4.0"
 
     def ready(self):
         from . import signals  # NOQA

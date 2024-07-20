@@ -6,11 +6,11 @@ readme = "README.rst"
 license = {text = "Apache"}
 keywords = ["pretix"]
 authors = [
-    {name = "Furizon Team", email = "webservice@furizon.net"},
+    {name = "Furizon team", email = "webservice@furizon.net"},
     {name = "Luca Sorace", email = "public.stranck@gmail.com"},
 ]
 maintainers = [
-    {name = "Furizon Team", email = "webservice@furizon.net"},
+    {name = "Furizon team", email = "webservice@furizon.net"},
     {name = "Luca Sorace", email = "public.stranck@gmail.com"},
 ]
 
