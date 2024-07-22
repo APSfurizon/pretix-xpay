@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-03-07 19:01+0100\n"
+"POT-Creation-Date: 2024-07-22 23:00+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: pretix team\n"
 "Language-Team: \n"
@@ -10,3 +10,174 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: ogone_boilerplate/pretix_xpay/apps.py:17
+msgid "XPay"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/apps.py:20
+msgid "Accept payments through the Nexi's XPay interface"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:31
+msgid "Ogone"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:86
+msgid "Hash algorithm"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:93
+msgid ""
+"Check at \"Configuration\", \"Technical information\", \"Global security "
+"parameters\" that the Hash algorithm is set to the value configured here."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:101
+msgid "SHA-IN pass phrase"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:103
+msgid ""
+"Can be found at \"Configuration\", \"Technical information\", \"Data and "
+"origin verification\"."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:110
+msgid "SHA-OUT pass phrase"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:112
+msgid ""
+"Must be set at \"Configuration\", \"Technical information\", \"Transaction "
+"feedback\". Please also make sure to set the option \"I would like to "
+"receive transaction feedback parameters on theredirection URLs.\""
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:121
+msgid "API User ID"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:123
+msgid ""
+"<a href='https://support.legacy.worldline-solutions.com/en/integration-"
+"solutions/integrations/"
+"directlink#directlink_integration_guides_api_user'>Setup guide</a>"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:131
+msgid "API User password"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:137
+#: ogone_boilerplate/pretix_xpay/payment.py:526
+msgid "Credit card"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:223
+msgid ""
+"The Ogone plugin is operating in test mode. No money will actually be "
+"transferred. You can use credit card 4111111111111111 for testing."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:317
+#, python-brace-format
+msgid "{public_name} via Ogone"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:347
+msgid "Payment is not in correct status to be refunded."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:369
+#, python-brace-format
+msgid "Refund was not sucessful (error message: {error})"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/payment.py:495
+msgid "Could not reach payment provider"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/signals.py:35
+#, python-brace-format
+msgid "Ogone reported an event (Status {status})."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/checkout_payment_confirm.html:3
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/checkout_payment_form.html:3
+msgid ""
+"After you submitted your order, we will redirect you to our payment provider "
+"to complete your payment. You will then be redirected back here to get your "
+"tickets."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/checkout_payment_form.html:9
+msgid "You need to turn on JavaScript for this payment method to work."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/control.html:6
+msgid "Payment ID"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/control.html:10
+msgid "Payment method"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/control.html:14
+msgid "Payment brand"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/control.html:18
+msgid "Card number"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/control.html:22
+msgid "Status"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/pending.html:5
+msgid ""
+"We're waiting for an answer from the payment provider regarding your "
+"payment. Please contact us if this takes more than a few days."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/pending.html:10
+msgid ""
+"The payment transaction could not be completed for the following reason:"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/pending.html:17
+msgid "Unknown reason"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/redirecting.html:7
+msgid "Redirecting..."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/redirecting.html:20
+msgid "You will be redirected shortly."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/redirecting.html:22
+msgid "If this takes longer than a few seconds, press this button:"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/redirecting.html:26
+msgid "Please turn on JavaScript, before you continue."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/templates/pretix_ogone/redirecting.html:34
+msgid "Continue"
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/views.py:138
+msgid ""
+"Sorry, we could not validate the payment result. Please try again or contact "
+"the event organizer to check if your payment was successful."
+msgstr ""
+
+#: ogone_boilerplate/pretix_xpay/views.py:157
+#: ogone_boilerplate/pretix_xpay/views.py:168
+#: ogone_boilerplate/pretix_xpay/views.py:184
+msgid "The payment has failed. You can click below to try again."
+msgstr ""

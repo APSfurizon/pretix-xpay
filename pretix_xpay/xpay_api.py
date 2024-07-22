@@ -27,12 +27,12 @@ ENDPOINT_CREATE_ORDER = "orders/hpp"
 DOCS_TEST_CARDS_URL = "https://developer.nexi.it/en/area-test/carte-di-pagamento"
 
 
-def initialize_payment(): # HPP call
+def initialize_payment(provider: XPayPaymentProvider): # HPP call
     requestBodyData = {
         "order": {
             "orderId": orderId,
             "amount": 1000, # Amount MUST be in CENTS (10 EUR = 1000 EUR CENTS)
-            "currency": "EUR",
+            "currency": provider.event.currency,
         },
         "paymentSession": {
             "amount": 1000, # Amount MUST be in CENTS (10 EUR = 1000 EUR CENTS)
