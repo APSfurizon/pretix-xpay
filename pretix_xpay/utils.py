@@ -17,8 +17,9 @@ from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
 
 logger = logging.getLogger(__name__)
 
-def encode_order_id(order: Order):
-    return "shit"
+def encode_order_id(orderPayment: OrderPayment, event: Event, settings: SettingsSandbox):
+    data: str = orderPayment.full_id + event.slug + event.organizer.slug + settings.order_id_secret
+    return hashlib.sha256(data.encode('utf-8')).hexdigest()[:18]
 
 def decode_order_id(order: Order):
     return "ziopera"

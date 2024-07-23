@@ -40,6 +40,15 @@ class XPayPaymentProvider(BasePaymentProvider):
                 SecretKeySettingsField(
                     label=_("Your XPay's API key")
                 )
+            ),
+            (
+                "order_id_secret", # Additional secret to create an orderID, to be used to identify a transaction
+                forms.CharField(
+                    label=_("OrderId hash salt"),
+                    help_text=_(
+                        'OrderId is an hashed string of multiple information about an order. To make it unpredictable and increase security, you need to provide a random, unique, string'
+                    ),
+                )
             )
         ] + list(super().settings_form_fields.items())
         d = OrderedDict(fields)
