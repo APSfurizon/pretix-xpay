@@ -16,7 +16,7 @@ from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.base.settings import SettingsSandbox
 from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
 from payment import XPayPaymentProvider
-from utils import encode_order_id, HASH_TAG
+from utils import encode_order_id, HASH_TAG, XOrderStatus
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ DOCS_TEST_CARDS_URL = "https://developer.nexi.it/en/area-test/carte-di-pagamento
 
 
 def initialize_payment(provider: XPayPaymentProvider, payment: OrderPayment): # HPP call
+    '''Creates the HPP body dictionary'''
     order_salted_hash = payment.order.tagged_secret(HASH_TAG)
     order_code = payment.order.code
     payment_pk = payment.pk
@@ -72,18 +73,34 @@ def initialize_payment(provider: XPayPaymentProvider, payment: OrderPayment): # 
         },
     }
 
-    response = direct_api_call(provider, "hpp", params)
+    response = post_api_call(provider, "hpp", params)
     return response["hostedPage"]
 
-def verify_order_status():
-    # TODO call to /orders/
-    pass
+def verify_order_status(provider: XPayPaymentProvider, payment: OrderPayment) -> XOrderStatus:
+    # Recover order id
+    order_id = encode_order_id(payment, provider.event, provider.settings)
+    # Recover order status
+    response = get_api_call(provider, ENDPOINT_ORDERS + order_id)
+    return XOrderStatus(response)
 
 
 def get_xpay_api_url(pp: XPayPaymentProvider):
     return TEST_URL if pp.event.testmode else PROD_URL
 
-def direct_api_call(pp : XPayPaymentProvider, path, params):
+def get_api_call(pp : XPayPaymentProvider, path: str):
+    try:
+        h = {
+            "X-Api-Key": pp.settings.api_key,
+            "Correlation-Id": str(uuid.uuid4()),
+        }
+        r = requests.get(f"{get_xpay_api_url(pp)}{path}", headers=h, timeout=31.5) #timeout to slightly more than a multiplel of 3, since it is TCP retrasmission time
+        r.raise_for_status()
+        return r.json()
+    except requests.RequestException:
+        logger.exception("Could not reach XPay's servers")
+        raise PaymentException(_("Could not reach payment provider"))
+
+def post_api_call(pp : XPayPaymentProvider, path: str, params: dict):
     try:
         h = {
             "X-Api-Key": pp.settings.api_key,

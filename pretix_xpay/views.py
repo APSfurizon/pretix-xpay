@@ -15,6 +15,8 @@ from pretix.base.models import Event, Order, OrderPayment, Quota
 from pretix.base.payment import PaymentException
 from pretix.multidomain.urlreverse import eventreverse
 from utils import encode_order_id, HASH_TAG
+from pretix_xpay.payment import XPayPaymentProvider
+from pretix_xpay.xpay_api import verify_order_status
 
 PENDING_OR_CREATED_STATES = (OrderPayment.PAYMENT_STATE_PENDING, OrderPayment.PAYMENT_STATE_CREATED)
 
@@ -34,42 +36,38 @@ class XPayOrderView:
         return super().dispatch(request, *args, **kwargs)
 
     @cached_property
-    def pprov(self):
+    def pprov(self) -> XPayPaymentProvider:
             return self.payment.payment_provider
     
     @property
-    def payment(self):
+    def payment(self) -> OrderPayment:
         return get_object_or_404(self.order.payments, pk=self.kwargs["payment"], provider__istartswith="xpay")
 
     # On success, return gracefully, otherwise throws a PaymentException
     @transaction.atomic() # TODO: recover the order hash, compare it and fail if mismatch. Call /orders/<orderId> and handle order status
-    def process_result(self, get_params, payment, prov):
+    def process_result(self, get_params: dict, payment: OrderPayment, prov: XPayPaymentProvider):
+        # Recover order payment
         payment = OrderPayment.objects.select_for_update().get(pk=payment.pk)
+
         if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
             return  # race condition
         
-
-
-
-
-
-        # Old code
         payment.info_data = {**payment.info_data, **get_params}
         payment.save(update_fields=["info"])
 
-        if data["STATUS"] == "5" and payment.state in PENDING_OR_CREATED_STATES:
-            prov.capture_payment(payment)
-        elif data["STATUS"] in PENDING_STATES and payment.state in PENDING_OR_CREATED_STATES:
+        # Recover the order status
+        x_order_status = verify_order_status (prov, payment)
+        if not x_order_status.success or x_order_status.type == "MULTIPLE":
+            self.payment.state = OrderPayment.PAYMENT_STATE_FAILED
+            self.payment.save()
+        elif x_order_status.operation.operation_result == "PENDING":
             self.payment.state = OrderPayment.PAYMENT_STATE_PENDING
             self.payment.save()
-        elif data["STATUS"] in CANCELED_STATES and payment.state in PENDING_OR_CREATED_STATES:
-            self.payment.state = OrderPayment.PAYMENT_STATE_CANCELED
-            self.payment.save()
-        elif data["STATUS"] in SUCCESS_STATES and payment.state in PENDING_OR_CREATED_STATES:
+        elif x_order_status.success:
             self.payment.confirm()
             self.order.refresh_from_db()
         else:
-            raise PaymentException(f"Status {data['STATUS']} not successful")
+            raise PaymentException("Unrecognized state.")
     
 @method_decorator(csrf_exempt, name="dispatch")
 @method_decorator(xframe_options_exempt, "dispatch")

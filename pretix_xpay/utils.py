@@ -23,13 +23,14 @@ def encode_order_id(orderPayment: OrderPayment, event: Event):
 
 HASH_TAG = "plugins:pretix_xpay"
 
-SUCCESS_TYPES: Annotated[list, "All the success values operationResult might contain"] = [
+X_SUCCESS_RESULTS: Annotated[list, "All the success values operationResult might contain"] = [
     'AUTHORIZED',
     'EXECUTED',
-    'PENDING'
+    'PENDING',
+    'REFUNDED'
 ]
 
-FAIL_TYPES: Annotated[list, "All the failing values operationResult might contain"] = [
+X_FAIL_RESULTS: Annotated[list, "All the failing values operationResult might contain"] = [
     'DECLINED',
     'DENIED_BY_RISK',
     'THREEDS_VALIDATED',
@@ -39,15 +40,54 @@ FAIL_TYPES: Annotated[list, "All the failing values operationResult might contai
     'FAILED',
 ]
 
-def parse_order_result(result: dict) -> dict:
-    key_status = 'orderStatus'
-    key_result = 'result'
-    key_errors = 'errors'
-    to_return = {
-        'result': False,
-        'errors': []
-    }
-    
-    if key_status not in result:
-        to_return[key_result] = False
-        return to_return
+X_TYPE_AUTHORIZATION = 'AUTHORIZATION'
+X_TYPE_CAPTURE = 'CAPTURE'
+X_TYPE_VOID = 'VOID'
+X_TYPE_REFUND = 'REFUND'
+X_TYPE_CANCEL = 'CANCEL'
+X_TYPE_CARD_VERIFICATION = 'CARD_VERIFICATION'
+
+
+X_STATE_MULTIPLE_OPERATIONS = 'MULTIPLE'
+X_STATE_SINGLE_OPERATION = 'SINGLE'
+
+class XOrderOperation:
+        def __init__(self, operation_data: dict):
+            self.operation_id = operation_data["operationId"] if "operationId" in operation_data else None
+            self.operation_type = operation_data["operationType"] if "operationType" in operation_data else None
+            self.operation_result = operation_data["operationResult"] if "operationResult" in operation_data else None
+        
+        @property
+        def success (self):
+            return self.operation_result in X_SUCCESS_RESULTS
+
+class XOrderStatus:
+    def __init__(self, data: dict | None):
+        self.operations = []
+        if data is not None:
+            if "operations" in data and isinstance(data["operations"], list):
+                for single_operation in data["operations"]:
+                    op_to_add = XOrderOperation(single_operation)
+                    self.operations.append(op_to_add)
+
+    @property
+    def type(self):
+        return X_STATE_MULTIPLE_OPERATIONS if len(self.operations) > 1 else X_STATE_SINGLE_OPERATION
+
+    @property
+    def operation(self) -> XOrderOperation | None:
+        if self.type == X_STATE_MULTIPLE_OPERATIONS:
+            raise ValueError('There are multiple operations.')
+        else:
+            return self.operations[0] if len(self.operations) > 0 else None
+        
+    @property
+    def success(self):
+        result = True
+        result = result and len(self.operation) > 0
+        if result:
+            for operation in self.operations:
+                op: XOrderOperation = operation
+                result = result and op.success
+                if not result: break
+        return result
