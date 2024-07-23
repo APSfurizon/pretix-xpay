@@ -14,7 +14,7 @@ from pretix.base.models import Event, OrderPayment, OrderRefund
 from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.base.settings import SettingsSandbox
 from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
-from xpay_api import TEST_URL, DOCS_TEST_CARDS_URL
+from xpay_api import TEST_URL, DOCS_TEST_CARDS_URL, initialize_payment
 
 logger = logging.getLogger(__name__)
 
@@ -36,18 +36,9 @@ class XPayPaymentProvider(BasePaymentProvider):
     def settings_form_fields(self):
         fields = [
             (
-                "api_key",
+                "api_key", # Will be used to call XPay's API
                 SecretKeySettingsField(
                     label=_("Your XPay's API key")
-                )
-            ),
-            (
-                "order_id_secret", # Additional secret to create an orderID, to be used to identify a transaction
-                forms.CharField(
-                    label=_("OrderId hash salt"),
-                    help_text=_(
-                        'OrderId is an hashed string of multiple information about an order. To make it unpredictable and increase security, you need to provide a random, unique, string'
-                    ),
                 )
             )
         ] + list(super().settings_form_fields.items())
@@ -117,6 +108,6 @@ class XPayPaymentProvider(BasePaymentProvider):
 
     
     def execute_payment(self, request: HttpRequest, payment: OrderPayment):
-        return None
+        return initialize_payment(self, payment)
     
 
