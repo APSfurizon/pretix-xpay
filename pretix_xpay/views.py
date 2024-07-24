@@ -1,4 +1,5 @@
 import logging
+import pretix_xpay.xpay_api as xpay
 from django.contrib import messages
 from django.db import transaction
 from django.http import Http404, HttpResponse, HttpRequest
@@ -15,8 +16,7 @@ from pretix.base.models import Event, Order, OrderPayment, Quota
 from pretix.base.payment import PaymentException
 from pretix.multidomain.urlreverse import eventreverse
 from utils import encode_order_id, HASH_TAG
-from pretix_xpay.payment import XPayPaymentProvider
-from pretix_xpay.xpay_api import verify_order_status
+from pretix_xpay.payment import XPayPaymentProvider, XPAY_STATUS_SUCCESS, XPAY_STATUS_FAILS, XPAY_STATUS_PENDING
 
 PENDING_OR_CREATED_STATES = (OrderPayment.PAYMENT_STATE_PENDING, OrderPayment.PAYMENT_STATE_CREATED)
 
@@ -44,30 +44,44 @@ class XPayOrderView:
         return get_object_or_404(self.order.payments, pk=self.kwargs["payment"], provider__istartswith="xpay")
 
     # On success, return gracefully, otherwise throws a PaymentException
-    @transaction.atomic() # TODO: recover the order hash, compare it and fail if mismatch. Call /orders/<orderId> and handle order status
-    def process_result(self, get_params: dict, payment: OrderPayment, prov: XPayPaymentProvider):
+    @transaction.atomic()
+    def process_result(self, get_params: dict, payment: OrderPayment, provider: XPayPaymentProvider):
         # Recover order payment
         payment = OrderPayment.objects.select_for_update().get(pk=payment.pk)
 
         if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
             return  # race condition
         
-        payment.info_data = {**payment.info_data, **get_params}
+        payment.info_data = {**payment.info_data, **get_params} #TODO: ci stiamo salvando le cose giuste?
         payment.save(update_fields=["info"])
 
-        # Recover the order status
-        x_order_status = verify_order_status (prov, payment)
-        if not x_order_status.success or x_order_status.type == "MULTIPLE":
-            self.payment.state = OrderPayment.PAYMENT_STATE_FAILED
-            self.payment.save()
-        elif x_order_status.operation.operation_result == "PENDING":
+        if(get_params["esito"] in XPAY_STATUS_SUCCESS):
+            pass # go to fallback. Yes, spaghetti code :D
+        elif(get_params["esito"] in XPAY_STATUS_PENDING):
             self.payment.state = OrderPayment.PAYMENT_STATE_PENDING
             self.payment.save()
-        elif x_order_status.success:
-            self.payment.confirm()
-            self.order.refresh_from_db()
+            return
+        elif(get_params["esito"] in XPAY_STATUS_FAILS):
+            self.payment.state = OrderPayment.PAYMENT_STATE_FAILED
+            self.payment.save()
+            return
         else:
             raise PaymentException("Unrecognized state.")
+
+        # Fallback if payment is success
+        try:
+            self.payment.confirm()
+            self.order.refresh_from_db()
+
+            # Payment confirmed, take the preauthorized money
+            xpay.confirm_preauth(payment, provider)
+            
+        except Quota.QuotaExceededException as e:
+            # Payment failed, cancel the preauthorized money
+            xpay.refund_preauth(payment, provider)
+
+            raise e
+
     
 @method_decorator(csrf_exempt, name="dispatch")
 @method_decorator(xframe_options_exempt, "dispatch")
@@ -78,6 +92,9 @@ class ReturnView(XPayOrderView, View):
     #TODO: Maybe also the POST method has to be implemented
     
     def _handle(self, request: HttpRequest, get_params: dict):
+        if not xpay.return_page_validate_digest(request, self.pprov):
+            messages.error(self.request, _("Sorry, we could not validate the payment result. Please try again or contact the event organizer to check if your payment was successful."))
+            return self._redirect_to_order()
 
         if self.kwargs.get("result") == "ko":
             self.payment.fail(info=dict(get_params.items()), log_data={"result": self.kwargs.get("result"), **dict(get_params.items())} )
@@ -111,3 +128,13 @@ class ReturnView(XPayOrderView, View):
             )
             + ("?paid=yes" if self.order.status == Order.STATUS_PAID else "")
         )
+    
+@method_decorator(xframe_options_exempt, "dispatch")
+class RedirectView(XPayOrderView, TemplateView):
+    template_name = "pretix_xpay/redirecting.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["url"] = xpay.initialize_payment_get_url()
+        ctx["params"] = xpay.initialize_payment_get_params(self.pprov, self.payment, kwargs["order"], kwargs["hash"], kwargs["payment"])
+        return ctx

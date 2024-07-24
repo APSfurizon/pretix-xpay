@@ -5,10 +5,12 @@ This is a plugin for `pretix`_.
 
 Accept payments through the Nexi's XPay interface
 
+This implements the XPay Italian legacy system (https://ecommerce.nexi.it/specifiche-tecniche/), which should be implemented (as stated by the Nexi's support) if you haven't subscribed a contract with Banca Intesa or ex consorzio triveneto. We started implementing the XPay global/italian system (https://developer.nexi.it/en/servizio-ecommerce), but after a while we discovered we were using the other system so we stopped. You can find the implementation on the other branch (https://github.com/APSfurizon/pretix-xpay/tree/xpay-global). We have implemented everything up to the PREAUTH accept/cancel api endpoint (XPayOrderView.process_result in views.py)
+
 Flow chart
 ----------
 - Arrive to execute payment https://docs.pretix.eu/en/latest/development/api/payment.html#pretix.base.payment.pretix.base.payment.BasePaymentProvider.BasePaymentProvider.execute_payment
-- Post /hpp with url to custom view with order id generation, PREAUTH, get hostedPage
+- Post with url to custom view with order id generation, PREAUTH, get hostedPage
 - Return hostedPage, so the user is redirected
 - Nexi will land user on custom view:
 

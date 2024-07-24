@@ -36,11 +36,36 @@ class XPayPaymentProvider(BasePaymentProvider):
     def settings_form_fields(self):
         fields = [
             (
-                "api_key", # Will be used to call XPay's API
-                SecretKeySettingsField(
-                    label=_("Your XPay's API key")
+                "alias_key", # Will be used to identify the merchant during api calls
+                forms.CharField(
+                    label=_("XPay's Alias key"),
+                    help_text=_(
+                        'Check your backoffice area to recover the Alias value.'
+                    ),
                 )
-            )
+            ),
+            (
+                "hash",
+                forms.ChoiceField(
+                    label=_("Mac's hash algorithm"),
+                    choices=(
+                        ("sha1", "SHA-1"),
+                        ("sha256", "SHA-256"),
+                    ),
+                    help_text=_(
+                        'By default it is set to SHA-128, contact XPay\'s support in order to use SHA-256.'
+                    ),
+                ),
+            ),
+            (
+                "mac_secret_pass",
+                SecretKeySettingsField(
+                    label=_("Mac Secret"),
+                    help_text=_(
+                        'Check your backoffice area to recover the mac secret value. It is used to secure the hash'
+                    ),
+                ),
+            ),
         ] + list(super().settings_form_fields.items())
         d = OrderedDict(fields)
         d.move_to_end("_enabled", last=False)
@@ -95,16 +120,17 @@ class XPayPaymentProvider(BasePaymentProvider):
         ctx = {"request": request, "event": self.event, "settings": self.settings, "payment_info": payment_info, "payment": payment, "method": self.method, "provider": self}
         return template.render(ctx)
 
-    def shred_payment_info(self, obj: OrderPayment):
-        if not obj.info:
-            return
-        d = json.loads(obj.info)
-        if "details" in d:
-            d["details"] = {k: "█" for k in d["details"].keys()}
+    # TODO: Controllare se viene cancellata la roba giusta
+    #def shred_payment_info(self, obj: OrderPayment):
+    #    if not obj.info:
+    #        return
+    #    d = json.loads(obj.info)
+    #    if "details" in d:
+    #        d["details"] = {k: "█" for k in d["details"].keys()}
 
-        d["_shredded"] = True
-        obj.info = json.dumps(d)
-        obj.save(update_fields=["info"])
+    #    d["_shredded"] = True
+    #    obj.info = json.dumps(d)
+    #    obj.save(update_fields=["info"])
 
     
     def execute_payment(self, request: HttpRequest, payment: OrderPayment):
