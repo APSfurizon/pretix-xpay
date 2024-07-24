@@ -29,7 +29,7 @@ ENDPOINT_ORDERS_CREATE = f"ecomm/DispatcherServlet"
 ENDPOINT_ORDERS_CONFIRM = f"api/bo/contabilizza"
 ENDPOINT_ORDERS_CANCEL = f"api/bo/storna"
 
-DOCS_TEST_CARDS_URL = "https://developer.nexi.it/en/area-test/carte-di-pagamento" 
+DOCS_TEST_CARDS_URL = "https://ecommerce.nexi.it/area-test" 
 
 def initialize_payment_get_params(provider: XPayPaymentProvider, payment: OrderPayment, order_code: str, order_salted_hash: str, payment_pk) -> dict:
     transaction_code = encode_order_id(payment, provider.event)

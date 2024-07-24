@@ -76,7 +76,7 @@ class XPayPaymentProvider(BasePaymentProvider):
         if self.event.testmode:
             return _(
                 f"The XPay plugin is operating in test mode. No money will actually be transferred, but BE SURE to check you're redirected to {TEST_URL}."
-                f"You can use credit card avaible at {DOCS_TEST_CARDS_URL} for testing."
+                f"You can use credit card and configurations avaible at {DOCS_TEST_CARDS_URL} for testing."
             )
         return None
     
