@@ -15,8 +15,8 @@ from django_scopes import scopes_disabled
 from pretix.base.models import Event, Order, OrderPayment, Quota
 from pretix.base.payment import PaymentException
 from pretix.multidomain.urlreverse import eventreverse
-from utils import encode_order_id, HASH_TAG
-from pretix_xpay.payment import XPayPaymentProvider, XPAY_STATUS_SUCCESS, XPAY_STATUS_FAILS, XPAY_STATUS_PENDING
+from pretix_xpay.payment import XPayPaymentProvider
+from pretix_xpay.constants import XPAY_STATUS_SUCCESS, XPAY_STATUS_FAILS, XPAY_STATUS_PENDING, HASH_TAG
 
 PENDING_OR_CREATED_STATES = (OrderPayment.PAYMENT_STATE_PENDING, OrderPayment.PAYMENT_STATE_CREATED)
 

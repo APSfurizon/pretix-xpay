@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-22 23:00+0200\n"
+"POT-Creation-Date: 2024-07-24 22:21+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Furizon Team\n"
 "Language-Team: \n"
@@ -25,10 +25,36 @@ msgid "Pay trough XPay"
 msgstr "Paga con XPay"
 
 #: pretix_xpay/payment.py:41
-msgid "Your XPay's API key"
-msgstr "Chiavi API XPay"
+msgid "XPay's Alias key"
+msgstr "Chiave Alias XPay"
 
-#: pretix_xpay/payment.py:53
+#: pretix_xpay/payment.py:43
+msgid "Check your backoffice area to recover the Alias value."
+msgstr "Recupera da backoffice il tuo Alias."
+
+#: pretix_xpay/payment.py:50
+msgid "Mac's hash algorithm"
+msgstr "Algoritmo di hashing Mac"
+
+#: pretix_xpay/payment.py:56
+msgid ""
+"By default it is set to SHA-1, contact XPay's support in order to use "
+"SHA-256."
+msgstr ""
+"Impostato a SHA-1 come predefinito, contatta il supporto di XPay per "
+"cambiare l'algoritmo a SHA-256."
+
+#: pretix_xpay/payment.py:63
+msgid "Mac Secret"
+msgstr "Chiave MAC"
+
+#: pretix_xpay/payment.py:65
+msgid ""
+"Check your backoffice area to recover the mac secret value. It is used to "
+"secure the hash"
+msgstr "Recupera "
+
+#: pretix_xpay/payment.py:78
 #, python-brace-format
 msgid ""
 "The XPay plugin is operating in test mode. No money will actually be "
@@ -90,6 +116,75 @@ msgstr "La transazione non è andata a buon fine per i seguenti problemi:"
 msgid "Unknown reason"
 msgstr "Motivo sconosciuto"
 
-#: pretix_xpay/xpay_api.py:68
+#: pretix_xpay/templates/pretix_xpay/redirecting.html:7
+msgid "Redirecting..."
+msgstr "Reindirizzamento..."
+
+#: pretix_xpay/templates/pretix_xpay/redirecting.html:17
+msgid "You will be redirected shortly."
+msgstr "Verrete reindirizzati al più presto."
+
+#: pretix_xpay/templates/pretix_xpay/redirecting.html:19
+msgid "If this takes longer than a few seconds, press this button:"
+msgstr ""
+"Se dopo due secondi non siete stati reindirizzati, premere questo pulsante:"
+
+#: pretix_xpay/templates/pretix_xpay/redirecting.html:23
+msgid "Please turn on JavaScript, before you continue."
+msgstr "Abilitare JavaScript per continuare."
+
+#: pretix_xpay/templates/pretix_xpay/redirecting.html:31
+msgid "Continue"
+msgstr "Continua"
+
+#: pretix_xpay/views.py:96
+msgid ""
+"Sorry, we could not validate the payment result. Please try again or contact "
+"the event organizer to check if your payment was successful."
+msgstr ""
+"C'è stato un problema nell'elaborare il pagamento. Riprova o contatta "
+"l'organizzatore per controllare che il pagamento sia riuscito."
+
+#: pretix_xpay/views.py:101 pretix_xpay/views.py:111 pretix_xpay/views.py:119
+msgid "The payment has failed. You can click below to try again."
+msgstr "C'è stato un errore nel pagamento. Clicca il pulsante per riprovare."
+
+#: pretix_xpay/xpay_api.py:129
+msgid ""
+"Unable to validate the preauth confirm. Contact the event organizer to "
+"execute the refund manually. Be sure to remember the transaction code #{}"
+msgstr ""
+"Impossibile verificare la pre-autorizzazione. Contattare l'organizzatore "
+"dell'evento per eseguire un risarcimento manuale. Il codice transazione è #{}"
+
+#: pretix_xpay/xpay_api.py:132
+msgid ""
+"Preauth confirm request failed with error code {}: {}. Contact the event "
+"organizer to execute the refund manually. Be sure to remember the "
+"transaction code #{}"
+msgstr ""
+"C'è stato un errore nella richiesta di pre-autorizzazione, codice {}: {}. "
+"Contatta l'organizzatore per avviare la procedura di rimborso manualmente. "
+"Il codice transazione è #{}"
+
+#: pretix_xpay/xpay_api.py:166
+msgid ""
+"Unable to validate the preauth refund. Contact the event organizer to "
+"execute the refund manually. Be sure to remember the transaction code #{}"
+msgstr ""
+"Impossibile verificare la pre-autorizzazione. Contattare l'organizzatore "
+"dell'evento per eseguire un risarcimento manuale. Il codice transazione è #{}"
+
+#: pretix_xpay/xpay_api.py:169
+msgid ""
+"Preauth refund request failed with error code {}: {}. Contact the event "
+"organizer to execute the refund manually. Be sure to remember the "
+"transaction code #{}"
+msgstr ""
+"C'è stato un errore nella richiesta di pre-autorizzazione, codice {}: {}. "
+"Contatta l'organizzatore per avviare la procedura di rimborso manualmente. "
+"Il codice transazione è #{}"
+
+#: pretix_xpay/xpay_api.py:183
 msgid "Could not reach payment provider"
 msgstr "Impossibile raggiungere i server del fornitore"

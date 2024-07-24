@@ -14,7 +14,7 @@ from pretix.base.models import Event, OrderPayment, OrderRefund
 from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.base.settings import SettingsSandbox
 from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
-from xpay_api import TEST_URL, DOCS_TEST_CARDS_URL, initialize_payment
+from pretix_xpay.constants import TEST_URL, DOCS_TEST_CARDS_URL, HASH_TAG
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class XPayPaymentProvider(BasePaymentProvider):
                         ("sha256", "SHA-256"),
                     ),
                     help_text=_(
-                        'By default it is set to SHA-128, contact XPay\'s support in order to use SHA-256.'
+                        'By default it is set to SHA-1, contact XPay\'s support in order to use SHA-256.'
                     ),
                 ),
             ),
@@ -121,19 +121,27 @@ class XPayPaymentProvider(BasePaymentProvider):
         return template.render(ctx)
 
     # TODO: Controllare se viene cancellata la roba giusta
-    #def shred_payment_info(self, obj: OrderPayment):
-    #    if not obj.info:
-    #        return
-    #    d = json.loads(obj.info)
-    #    if "details" in d:
-    #        d["details"] = {k: "█" for k in d["details"].keys()}
+    def shred_payment_info(self, obj: OrderPayment):
+       if not obj.info:
+           return
+       d = json.loads(obj.info)
+       if "details" in d:
+           d["details"] = {k: "█" for k in d["details"].keys()}
 
-    #    d["_shredded"] = True
-    #    obj.info = json.dumps(d)
-    #    obj.save(update_fields=["info"])
+       d["_shredded"] = True
+       obj.info = json.dumps(d)
+       obj.save(update_fields=["info"])
 
     
     def execute_payment(self, request: HttpRequest, payment: OrderPayment):
-        return initialize_payment(self, payment)
+        return eventreverse(
+            self.event,
+            "plugins:pretix_xpay:redirect",
+            kwargs={
+                "order": payment.order.code,
+                "payment": payment.pk,
+                "hash": payment.order.tagged_secret(HASH_TAG),
+            },
+        )
     
 

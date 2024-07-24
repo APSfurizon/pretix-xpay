@@ -16,23 +16,15 @@ from pretix.base.models import Event, OrderPayment, OrderRefund
 from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.base.settings import SettingsSandbox
 from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
-from payment import XPayPaymentProvider
-from utils import encode_order_id, HASH_TAG, generate_mac
+from pretix_xpay.payment import XPayPaymentProvider
+from pretix_xpay.utils import encode_order_id, generate_mac
+from pretix_xpay.constants import ENDPOINT_ORDERS_CREATE, ENDPOINT_ORDERS_CONFIRM, ENDPOINT_ORDERS_CANCEL, TEST_URL, PROD_URL, HASH_TAG
 from time import time
 
 logger = logging.getLogger(__name__)
 
-TEST_URL = "https://int-ecommerce.nexi.it/ecomm/"
-PROD_URL = "https://ecommerce.nexi.it/ecomm/"
-
-ENDPOINT_ORDERS_CREATE = f"ecomm/DispatcherServlet"
-ENDPOINT_ORDERS_CONFIRM = f"api/bo/contabilizza"
-ENDPOINT_ORDERS_CANCEL = f"api/bo/storna"
-
-DOCS_TEST_CARDS_URL = "https://developer.nexi.it/en/area-test/carte-di-pagamento" 
-
 def initialize_payment_get_params(provider: XPayPaymentProvider, payment: OrderPayment, order_code: str, order_salted_hash: str, payment_pk) -> dict:
-    transaction_code = encode_order_id(payment, provider.event)
+    transaction_code = encode_order_id(payment, provider.event, True)
     amount = int(payment.amount * 100)
 
     return {
@@ -73,17 +65,6 @@ def initialize_payment_get_params(provider: XPayPaymentProvider, payment: OrderP
 
 def initialize_payment_get_url() -> str:
     return get_xpay_api_url() + ENDPOINT_ORDERS_CREATE
-
-def initialize_payment(provider: XPayPaymentProvider, payment: OrderPayment):
-    return eventreverse(
-            provider.event,
-            "plugins:pretix_xpay:redirect",
-            kwargs={
-                "order": payment.order.code,
-                "payment": payment.pk,
-                "hash": payment.order.tagged_secret(HASH_TAG),
-            },
-        )
 
 def return_page_validate_digest(request: HttpRequest, provider: XPayPaymentProvider) -> bool:
     hmac = generate_mac([
@@ -126,10 +107,10 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
             ("timeStamp", result["timeStamp"])
         ], provider)
     if(hmac != result["mac"]):
-        raise PaymentException(_('Unable to validate the preauth confirm. Contact Furizon\'s staff to execute the refund manually. Be sure to remember the transaction code #{}') % transaction_code)
+        raise PaymentException(_('Unable to validate the preauth confirm. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % transaction_code)
 
     if(result["esito"] == "ko"):
-        raise PaymentException(_('Preauth confirm request failed with error code {}: {}. Contact Furizon\'s staff to execute the refund manually. Be sure to remember the transaction code #{}') % result["errore"]["codice"], result["errore"]["messaggio"], transaction_code)
+        raise PaymentException(_('Preauth confirm request failed with error code {}: {}. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % result["errore"]["codice"], result["errore"]["messaggio"], transaction_code)
     elif(result["esito"] == "ok"):
         pass # If the process is ok, we're done
 
@@ -163,10 +144,10 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
             ("timeStamp", result["timeStamp"])
         ], provider)
     if(hmac != result["mac"]):
-        raise PaymentException(_('Unable to validate the preauth refund. Contact Furizon\'s staff to execute the refund manually. Be sure to remember the transaction code #{}') % transaction_code)
+        raise PaymentException(_('Unable to validate the preauth refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % transaction_code)
 
     if(result["esito"] == "ko"):
-        raise PaymentException(_('Preauth refund request failed with error code {}: {}. Contact Furizon\'s staff to execute the refund manually. Be sure to remember the transaction code #{}') % result["errore"]["codice"], result["errore"]["messaggio"], transaction_code)
+        raise PaymentException(_('Preauth refund request failed with error code {}: {}. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % result["errore"]["codice"], result["errore"]["messaggio"], transaction_code)
     elif(result["esito"] == "ok"):
         pass # If the process is ok, we're done
 
