@@ -13,6 +13,8 @@ from pretix.base.signals import (
 )
 
 from pretix_xpay.payment import XPayPaymentProvider
+from pretix_xpay.xpay_api import get_order_status
+from pretix_xpay.constants import XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_RECORDED, XPAY_RESULT_REFUNDED
 
 logger = logging.getLogger(__name__)
 
@@ -27,5 +29,32 @@ def pretixcontrol_logentry_display(sender, logentry, **kwargs):
     return _("XPay reported an event (Status {status}).").format(status=logentry.parsed_data.get("STATUS", "?"))
 
 # TODO: Periodically refresh pending events
+@receiver(periodic_task, dispatch_uid="payment_xpay_periodic_poll")
+@scopes_disabled()
+def poll_pending_payments(sender, **kwargs):
+    for op in OrderPayment.objects.filter(provider__startswith="xpay_", state=OrderPayment.PAYMENT_STATE_PENDING):
+        if op.created < now() - timedelta(days=3): #TODO: Is configurable timeout needed?
+            op.fail(log_data={"result": "poll_timeout"})
+            continue
+        try:
+            pprov = op.payment_provider
+            data = get_order_status(payment=op, provider=pprov)
+            if data.status in XPAY_RESULT_AUTHORIZED:
+                pass
+            elif data.status in XPAY_RESULT_RECORDED:
+                pass
+            elif data.status in XPAY_RESULT_PENDING:
+                pass
+            # OLD CODE
+            if data["STATUS"] == "9":
+                op.confirm()
+            elif data["STATUS"] in PENDING_STATES:
+                continue
+            else:
+                op.fail(log_data=data)
+        except Exception:
+            logger.exception("Could not poll transaction status")
+            pass
+
 
 settings_hierarkey.add_default("payment_xpay_hash", "sha1", str)

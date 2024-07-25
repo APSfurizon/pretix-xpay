@@ -17,8 +17,8 @@ from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.base.settings import SettingsSandbox
 from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
 from pretix_xpay.payment import XPayPaymentProvider
-from pretix_xpay.utils import encode_order_id, generate_mac
-from pretix_xpay.constants import ENDPOINT_ORDERS_CREATE, ENDPOINT_ORDERS_CONFIRM, ENDPOINT_ORDERS_CANCEL, TEST_URL, PROD_URL, HASH_TAG
+from pretix_xpay.utils import encode_order_id, generate_mac, OrderStatus
+from pretix_xpay.constants import *
 from time import time
 
 logger = logging.getLogger(__name__)
@@ -150,6 +150,35 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         raise PaymentException(_('Preauth refund request failed with error code {}: {}. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % result["errore"]["codice"], result["errore"]["messaggio"], transaction_code)
     elif(result["esito"] == "ok"):
         pass # If the process is ok, we're done
+
+def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> OrderStatus:
+    alias_key = provider.settings.alias_key
+    transaction_code = encode_order_id(payment, provider.event)
+    timestamp = int(time.time() * 1000)
+
+    hmac = generate_mac([
+            ("apiKey", alias_key),
+            ("codiceTransazione", transaction_code),
+            ("timeStamp", timestamp)
+        ], provider)
+    
+    body = {
+        "apiKey": alias_key,
+        "codiceTransazione": transaction_code,
+        "timestamp": timestamp,
+        "mac": hmac
+    }
+    result = post_api_call(provider, ENDPOINT_ORDERS_STATUS, body)
+
+    hmac = generate_mac([
+            ("esito", result["esito"]),
+            ("idOperazione", result["idOperazione"]),
+            ("timeStamp", result["timeStamp"])
+        ], provider)
+    if(hmac != result["mac"]):
+        raise PaymentException(_('Unable to validate the order status for {}.') % transaction_code)
+    
+    return OrderStatus(result)
 
 def get_xpay_api_url(pp: XPayPaymentProvider):
     return TEST_URL if pp.event.testmode else PROD_URL
