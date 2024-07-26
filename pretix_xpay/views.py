@@ -16,6 +16,7 @@ from pretix.base.models import Event, Order, OrderPayment, Quota
 from pretix.base.payment import PaymentException
 from pretix.multidomain.urlreverse import eventreverse
 from pretix_xpay.payment import XPayPaymentProvider
+from pretix_xpay.utils import confirm_payment_and_capture_from_preauth
 from pretix_xpay.constants import XPAY_STATUS_SUCCESS, XPAY_STATUS_FAILS, XPAY_STATUS_PENDING, HASH_TAG
 
 PENDING_OR_CREATED_STATES = (OrderPayment.PAYMENT_STATE_PENDING, OrderPayment.PAYMENT_STATE_CREATED)
@@ -58,10 +59,12 @@ class XPayOrderView:
         if(get_params["esito"] in XPAY_STATUS_SUCCESS):
             pass # go to fallback. Yes, spaghetti code :D
         elif(get_params["esito"] in XPAY_STATUS_PENDING):
+            logger.info(f"XPAY_return [{payment.full_id}]: Payment is now pending")
             self.payment.state = OrderPayment.PAYMENT_STATE_PENDING
             self.payment.save()
             return
         elif(get_params["esito"] in XPAY_STATUS_FAILS):
+            logger.info(f"XPAY_return [{payment.full_id}]: Payment is now failed")
             self.payment.state = OrderPayment.PAYMENT_STATE_FAILED
             self.payment.save()
             return
@@ -69,19 +72,7 @@ class XPayOrderView:
             raise PaymentException("Unrecognized state.")
 
         # Fallback if payment is success
-        try:
-            self.payment.confirm()
-            self.order.refresh_from_db()
-
-            # Payment confirmed, take the preauthorized money
-            xpay.confirm_preauth(payment, provider)
-            
-        except Quota.QuotaExceededException as e:
-            # Payment failed, cancel the preauthorized money
-            xpay.refund_preauth(payment, provider)
-
-            raise e
-
+        confirm_payment_and_capture_from_preauth(self.payment, provider, self.order)
     
 @method_decorator(csrf_exempt, name="dispatch")
 @method_decorator(xframe_options_exempt, "dispatch")

@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import requests
+import xpay_api as xpay
 from collections import OrderedDict
 from django import forms
 from django.http import HttpRequest
@@ -10,16 +11,16 @@ from django.utils.functional import lazy
 from django.utils.translation import gettext_lazy as _
 from lxml import etree
 from pretix.base.forms import SecretKeySettingsField
-from pretix.base.models import Order, Event, OrderPayment, OrderRefund
+from pretix.base.models import Order, Event, OrderPayment, OrderRefund, Quota
 from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
 from datetime import datetime
+from pretix_xpay.payment import XPayPaymentProvider
 from pretix_xpay.constants import XPAY_OPERATION_RECORD, XPAY_OPERATION_REFUND, XPAY_RESULT_AUTHORIZED, XPAY_RESULT_RECORDED, XPAY_RESULT_PENDING, XPAY_RESULT_REFUNDED
 
 logger = logging.getLogger(__name__)
 
 def encode_order_id(orderPayment: OrderPayment, event: Event, newAttempt: bool = False) -> str:
-    #TODO: problema con vecchio metodo: l'orderId non può essere lo stesso, anche per riprovare lo stesso pagamento
     attempt_id = 0
     if "attempt_counter" not in orderPayment.info_data:
         orderPayment.info_data["attempt_counter"] = 0
@@ -39,6 +40,24 @@ def generate_mac(data: list, provider: BasePaymentProvider) -> str:
         hash_algo.update(f"{el[0]}={str(el[1])}".encode("UTF-8"))
     hash_algo.update(provider.settings.mac_secret_pass.encode("UTF-8"))
     return hash_algo.hexdigest()
+
+def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
+    try:
+        payment.confirm()
+        logger.info(f"XPAY [{payment.full_id}]: Payment confirmed!")
+        order.refresh_from_db()
+
+        # Payment confirmed, take the preauthorized money
+        xpay.confirm_preauth(payment, provider)
+        logger.info(f"XPAY [{payment.full_id}]: Successfully requested capture operation")
+        
+    except Quota.QuotaExceededException as e:
+        # Payment failed, cancel the preauthorized money
+        xpay.refund_preauth(payment, provider)
+        logger.info(f"XPAY [{payment.full_id}]: Tried confirming payment, but quota was exceeded")
+        payment.fail(info="Tried confirming payment, but quota was exceeded") #TODO; Check if manual fail() call is needed
+
+        raise e
 
 class OrderOperation:
     def __init__(self, data: dict):

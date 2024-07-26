@@ -10,8 +10,8 @@ This implements the XPay Italian legacy system (https://ecommerce.nexi.it/specif
 TODO
 ----
 - Do the TODO
-- Solve the generation of orderId
-- Auto refresh the pending orders
+- <del>Solve the generation of orderId</del>
+- <del>Auto refresh the pending orders</del>
 - Test everything
 
 

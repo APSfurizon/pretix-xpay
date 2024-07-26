@@ -79,6 +79,7 @@ def return_page_validate_digest(request: HttpRequest, provider: XPayPaymentProvi
     return hmac == request.GET["mac"]
 
 def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
+    #TODO: Support already confirmed payments due to raceconditions
     alias_key = provider.settings.alias_key
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
@@ -116,6 +117,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
 
 
 def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
+    #TODO: Support already confirmed payments due to raceconditions
     alias_key = provider.settings.alias_key
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
