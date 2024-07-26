@@ -12,7 +12,7 @@ from django.utils.functional import lazy
 from django.utils.translation import gettext_lazy as _
 from lxml import etree
 from pretix.base.forms import SecretKeySettingsField
-from pretix.base.models import Event, OrderPayment, OrderRefund
+from pretix.base.models import Event, OrderPayment, OrderRefund, Order, Quota
 from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.base.settings import SettingsSandbox
 from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
@@ -181,6 +181,24 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
         raise PaymentException(_('Unable to validate the order status for {}.') % transaction_code)
     
     return OrderStatus(result)
+
+def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
+    try:
+        payment.confirm()
+        logger.info(f"XPAY [{payment.full_id}]: Payment confirmed!")
+        order.refresh_from_db()
+
+        # Payment confirmed, take the preauthorized money
+        confirm_preauth(payment, provider)
+        logger.info(f"XPAY [{payment.full_id}]: Successfully requested capture operation")
+        
+    except Quota.QuotaExceededException as e:
+        # Payment failed, cancel the preauthorized money
+        refund_preauth(payment, provider)
+        logger.info(f"XPAY [{payment.full_id}]: Tried confirming payment, but quota was exceeded")
+        payment.fail(info="Tried confirming payment, but quota was exceeded") #TODO; Check if manual fail() call is needed
+
+        raise e
 
 def get_xpay_api_url(pp: XPayPaymentProvider):
     return TEST_URL if pp.event.testmode else PROD_URL

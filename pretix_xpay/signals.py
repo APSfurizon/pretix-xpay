@@ -12,9 +12,8 @@ from pretix.base.signals import (
     register_payment_providers,
 )
 
-from pretix_xpay.utils import confirm_payment_and_capture_from_preauth
 from pretix_xpay.payment import XPayPaymentProvider
-from pretix_xpay.xpay_api import get_order_status
+from pretix_xpay.xpay_api import get_order_status, confirm_payment_and_capture_from_preauth
 from pretix_xpay.constants import XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_RECORDED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
 
 logger = logging.getLogger(__name__)

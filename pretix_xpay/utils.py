@@ -2,7 +2,6 @@ import hashlib
 import json
 import logging
 import requests
-import xpay_api as xpay
 from collections import OrderedDict
 from django import forms
 from django.http import HttpRequest
@@ -40,24 +39,6 @@ def generate_mac(data: list, provider: BasePaymentProvider) -> str:
         hash_algo.update(f"{el[0]}={str(el[1])}".encode("UTF-8"))
     hash_algo.update(provider.settings.mac_secret_pass.encode("UTF-8"))
     return hash_algo.hexdigest()
-
-def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
-    try:
-        payment.confirm()
-        logger.info(f"XPAY [{payment.full_id}]: Payment confirmed!")
-        order.refresh_from_db()
-
-        # Payment confirmed, take the preauthorized money
-        xpay.confirm_preauth(payment, provider)
-        logger.info(f"XPAY [{payment.full_id}]: Successfully requested capture operation")
-        
-    except Quota.QuotaExceededException as e:
-        # Payment failed, cancel the preauthorized money
-        xpay.refund_preauth(payment, provider)
-        logger.info(f"XPAY [{payment.full_id}]: Tried confirming payment, but quota was exceeded")
-        payment.fail(info="Tried confirming payment, but quota was exceeded") #TODO; Check if manual fail() call is needed
-
-        raise e
 
 class OrderOperation:
     def __init__(self, data: dict):
