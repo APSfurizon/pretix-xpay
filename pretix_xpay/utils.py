@@ -30,7 +30,7 @@ def encode_order_id(orderPayment: OrderPayment, event: Event, newAttempt: bool =
         orderPayment.save(update_fields=["info"])
     else:
         attempt_id = int(orderPayment.info_data["attempt_counter"])
-    data: str = event.organizer.slug + event.slug + orderPayment.full_id + attempt_id
+    data: str = f"{event.organizer.slug}{event.slug}{orderPayment.full_id}{attempt_id}"
     return hashlib.sha256(data.encode('utf-8')).hexdigest()[:18]
 
 def generate_mac(data: list, provider: BasePaymentProvider) -> str:

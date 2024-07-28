@@ -12,6 +12,7 @@ TODO
 - Do the TODO
 - <del>Solve the generation of orderId</del>
 - <del>Auto refresh the pending orders</del>
+- Fix parametrized translations raise `python not all arguments converted during string formatting`
 - Test everything
 
 
@@ -64,6 +65,38 @@ You can auto-fix some of these issues by running::
 
 To automatically check for these issues before you commit, you can run ``.install-hooks``.
 
+Debugging\
+-----------------
+
+1. Run ``python setup.py develop``, which will install the plugin as a module, linking to the project's folder
+
+2. Setup pretix via ``python -m pretix migrate`` and ``python -m pretix runserver`` (Be sure to be in a different folder location)
+
+3. Configure pretix with a basic organizer and event, be sure to enable XPay both in the ``Plugins`` and ``Payment Providers`` sections of the event's settings.
+
+4. Configure vscode's launch.json like the following:
+    ::
+    {
+        // Use IntelliSense to learn about possible attributes.
+        // Hover to view descriptions of existing attributes.
+        // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Python Debugger: Module",
+                "type": "debugpy",
+                "request": "launch",
+                "module": "pretix",
+                "cwd": "${workspaceFolder}/../pretix_env/",
+                "args": [
+                    "runserver"
+                ]
+            }
+        ]
+    }
+    ::
+
+5. Press F5 or launch debug from the dedicated left panel
 
 License
 -------

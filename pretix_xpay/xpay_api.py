@@ -1,5 +1,4 @@
 import hashlib
-import time
 import json
 import uuid
 import logging
@@ -63,14 +62,14 @@ def initialize_payment_get_params(provider: XPayPaymentProvider, payment: OrderP
         "TCONTAB": "D" # Preauthing first. We're gonna finalize the payment after we're sure there's enough quota and the order is marked as paid
     }
 
-def initialize_payment_get_url() -> str:
-    return get_xpay_api_url() + ENDPOINT_ORDERS_CREATE
+def initialize_payment_get_url(provider: XPayPaymentProvider) -> str:
+    return get_xpay_api_url(provider) + ENDPOINT_ORDERS_CREATE
 
 def return_page_validate_digest(request: HttpRequest, provider: XPayPaymentProvider) -> bool:
     hmac = generate_mac([
             ("codTrans", request.GET["codTrans"]),
-            ("esito", request.GET["esito"])
-            ("importo", request.GET["importo"])
+            ("esito", request.GET["esito"]),
+            ("importo", request.GET["importo"]),
             ("divisa", "EUR"),
             ("data", request.GET["data"]),
             ("orario", request.GET["orario"]),
@@ -83,7 +82,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     alias_key = provider.settings.alias_key
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
-    timestamp = int(time.time() * 1000)
+    timestamp = int(time() * 1000)
     hmac = generate_mac([
             ("apiKey", alias_key),
             ("codiceTransazione", transaction_code),
@@ -97,7 +96,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         "codiceTransazione": transaction_code,
         "importo": amount,
         "divisa": "978",
-        "timestamp": timestamp,
+        "timeStamp": timestamp,
         "mac": hmac
     }
     result = post_api_call(provider, ENDPOINT_ORDERS_CONFIRM, body)
@@ -111,7 +110,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         raise PaymentException(_('Unable to validate the preauth confirm. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % transaction_code)
 
     if(result["esito"] == "ko"):
-        raise PaymentException(_('Preauth confirm request failed with error code {}: {}. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % result["errore"]["codice"], result["errore"]["messaggio"], transaction_code)
+        raise PaymentException(_('Preauth confirm request failed with error code {}: {}. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % (result["errore"]["codice"], result["errore"]["messaggio"], transaction_code))
     elif(result["esito"] == "ok"):
         pass # If the process is ok, we're done
 
@@ -121,7 +120,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     alias_key = provider.settings.alias_key
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
-    timestamp = int(time.time() * 1000)
+    timestamp = int(time() * 1000)
     hmac = generate_mac([
             ("apiKey", alias_key),
             ("codiceTransazione", transaction_code),
@@ -135,7 +134,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         "codiceTransazione": transaction_code,
         "importo": amount,
         "divisa": "978",
-        "timestamp": timestamp,
+        "timeStamp": timestamp,
         "mac": hmac
     }
     result = post_api_call(provider, ENDPOINT_ORDERS_CANCEL, body)
@@ -145,18 +144,18 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
             ("idOperazione", result["idOperazione"]),
             ("timeStamp", result["timeStamp"])
         ], provider)
-    if(hmac != result["mac"]):
-        raise PaymentException(_('Unable to validate the preauth refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % transaction_code)
 
     if(result["esito"] == "ko"):
         raise PaymentException(_('Preauth refund request failed with error code {}: {}. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % result["errore"]["codice"], result["errore"]["messaggio"], transaction_code)
     elif(result["esito"] == "ok"):
+        if(hmac != result["mac"]):
+            raise PaymentException(_('Unable to validate the preauth refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #{}') % transaction_code)
         pass # If the process is ok, we're done
 
 def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> OrderStatus:
     alias_key = provider.settings.alias_key
     transaction_code = encode_order_id(payment, provider.event)
-    timestamp = int(time.time() * 1000)
+    timestamp = int(time() * 1000)
 
     hmac = generate_mac([
             ("apiKey", alias_key),

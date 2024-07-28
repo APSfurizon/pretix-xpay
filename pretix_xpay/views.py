@@ -81,20 +81,20 @@ class ReturnView(XPayOrderView, View):
     
     #TODO: Maybe also the POST method has to be implemented
     
-    def _handle(self, request: HttpRequest, get_params: dict):
-        if not xpay.return_page_validate_digest(request, self.pprov):
+    def _handle(self, data: dict):
+        if not xpay.return_page_validate_digest(self.request, self.pprov):
             messages.error(self.request, _("Sorry, we could not validate the payment result. Please try again or contact the event organizer to check if your payment was successful."))
             return self._redirect_to_order()
 
         if self.kwargs.get("result") == "ko":
-            self.payment.fail(info=dict(get_params.items()), log_data={"result": self.kwargs.get("result"), **dict(get_params.items())} )
+            self.payment.fail(info=dict(data.items()), log_data={"result": self.kwargs.get("result"), **dict(data.items())} )
             messages.error(self.request, _("The payment has failed. You can click below to try again."))
             return self._redirect_to_order()
         
         elif self.kwargs.get("result") == "ok":
             try:
                 # On success, return gracefully, otherwise throws a PaymentException
-                self.process_result(get_params, self.payment, self.pprov)
+                self.process_result(data, self.payment, self.pprov)
             except Quota.QuotaExceededException as e:
                 messages.error(self.request, str(e))
             except PaymentException as e:
@@ -105,7 +105,7 @@ class ReturnView(XPayOrderView, View):
             return self._redirect_to_order()
         
         else:
-            self.payment.fail(info=dict(get_params.items()), log_data={"result": self.kwargs.get("result"), **dict(get_params.items())} )
+            self.payment.fail(info=dict(data.items()), log_data={"result": self.kwargs.get("result"), **dict(data.items())} )
             messages.error(self.request, _("The payment has failed. You can click below to try again."))
             return self._redirect_to_order()
 
@@ -125,6 +125,6 @@ class RedirectView(XPayOrderView, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["url"] = xpay.initialize_payment_get_url()
+        ctx["url"] = xpay.initialize_payment_get_url(self.pprov)
         ctx["params"] = xpay.initialize_payment_get_params(self.pprov, self.payment, kwargs["order"], kwargs["hash"], kwargs["payment"])
         return ctx
