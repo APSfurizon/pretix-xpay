@@ -28,12 +28,11 @@ def pretixcontrol_logentry_display(sender, logentry, **kwargs):
         return
     return _("XPay reported an event (Status {status}).").format(status=logentry.parsed_data.get("STATUS", "?"))
 
-# TODO: Periodically refresh pending events
 @receiver(periodic_task, dispatch_uid="payment_xpay_periodic_poll")
 @scopes_disabled()
 def poll_pending_payments(sender, **kwargs):
     for payment in OrderPayment.objects.filter(provider__startswith="xpay_", state=[OrderPayment.PAYMENT_STATE_PENDING, OrderPayment.PAYMENT_STATE_CREATED]):
-        if payment.created < now() - timedelta(days=3): #TODO: Is configurable timeout needed?
+        if payment.created < now() - timedelta(minutes=payment.provider.settings.poll_pending_timeout): #TODO: Is configurable timeout needed?
             payment.fail(log_data={"result": "poll_timeout"})
             continue
         if payment.order.status != Order.STATUS_EXPIRED and payment.order.status != Order.STATUS_PENDING:

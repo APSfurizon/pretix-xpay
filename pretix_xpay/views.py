@@ -78,9 +78,7 @@ class XPayOrderView:
 class ReturnView(XPayOrderView, View):
     def get(self, request: HttpRequest, *args, **kwargs):
         return self._handle(request.GET.dict())
-    
-    #TODO: Maybe also the POST method has to be implemented
-    
+        
     def _handle(self, data: dict):
         if not xpay.return_page_validate_digest(self.request, self.pprov):
             messages.error(self.request, _("Sorry, we could not validate the payment result. Please try again or contact the event organizer to check if your payment was successful."))

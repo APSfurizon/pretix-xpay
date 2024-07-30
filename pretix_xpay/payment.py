@@ -66,6 +66,18 @@ class XPayPaymentProvider(BasePaymentProvider):
                     ),
                 ),
             ),
+            (
+                "poll_pending_timeout",
+                forms.IntegerField(
+                    label=_("Poll pending timeout (mins)"),
+                    min_value = 1,
+                    step_size = 1,
+                    help_text=_(
+                        'Pending and newly created payment orders are refreshed with regular intervals, to check if the user have actually paid, but left the process of returning back to pretix\'s pages.'
+                        'This timeout specifies in how much time the payment should be considered over and should be marked as expired.'
+                    ),
+                ),
+            ),
         ] + list(super().settings_form_fields.items())
         d = OrderedDict(fields)
         d.move_to_end("_enabled", last=False)
@@ -106,14 +118,12 @@ class XPayPaymentProvider(BasePaymentProvider):
         ctx = {"request": request, "event": self.event, "settings": self.settings, "provider": self}
         return template.render(ctx)
     
-    # TODO: Check what payment info actually is
     def payment_pending_render(self, request, payment) -> str: # Render customer-facing instructions on how to proceed with a pending payment
         template = get_template("pretix_xpay/pending.html")
         payment_info = json.loads(payment.info) if payment.info else None
         ctx = {"request": request, "event": self.event, "settings": self.settings, "provider": self, "order": payment.order, "payment": payment, "payment_info": payment_info}
         return template.render(ctx)
 
-    # TODO: Check what payment info actually is
     def payment_control_render(self, request, payment) -> str: # It should return to admins HTML code containing information regarding the current payment status and, if applicable, next steps. NOT MANDATORY
         template = get_template("pretix_xpay/control.html")
         payment_info = json.loads(payment.info) if payment.info else None

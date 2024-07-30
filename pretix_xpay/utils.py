@@ -55,19 +55,19 @@ class OrderStatus:
         is_valid = data and isinstance(data, dict) and "esito" in data and data["esito"] == "OK"
         is_valid = is_valid and "report" in data and isinstance(data["report"], list)
         is_valid = is_valid and len(data["report"]) > 0 and isinstance(data["report"][0], dict)
-        if not is_valid: raise ValueError(_('Could not parse order {}' % transaction_id))
+        if not is_valid: raise ValueError(_('Could not parse order %s') % transaction_id)
         report = data["report"][0]
 
         # Throw if report data is unparseable
         is_valid = is_valid and "codiceTransazione" in report and report["codiceTransazione"] == transaction_id
         is_valid = is_valid and "dettaglio" in report and isinstance(report["dettaglio"], list) and len(report["dettaglio"]) > 0
-        if not is_valid: raise ValueError(_('Could not parse order {}' % transaction_id))
+        if not is_valid: raise ValueError(_('Could not parse order %s') % transaction_id)
         self.transaction_id = report["codiceTransazione"]
 
         #Throw if detail is unparseable        
         details = report["dettaglio"][0]
         is_valid = is_valid and isinstance(details, dict) and "stato" in details
-        if not is_valid: raise ValueError(_('Could not parse order {}' % transaction_id))
+        if not is_valid: raise ValueError(_('Could not parse order %s') % transaction_id)
 
         self.fallback_status = details["stato"]
         self.operations = []
