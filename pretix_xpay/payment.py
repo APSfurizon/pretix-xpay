@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class XPayPaymentProvider(BasePaymentProvider):
     identifier = "xpay"
     verbose_name = _("XPay")
-    public_name = _("Pay trough XPay")
+    public_name = _("Pay through XPay")
     abort_pending_allowed = False
     execute_payment_needs_user = True
 
