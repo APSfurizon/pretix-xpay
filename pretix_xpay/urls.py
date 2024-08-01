@@ -1,6 +1,6 @@
 from django.urls import include, path, re_path
 
-from .views import ReturnView, RedirectView
+from .views import ReturnView, RedirectView, PollPendingView
 
 event_patterns = [
     re_path(
@@ -16,6 +16,11 @@ event_patterns = [
                     "return/<str:order>/<str:hash>/<str:payment>/<str:result>",
                     ReturnView.as_view(),
                     name="return",
+                ),
+                path( # Test purpose
+                    "poll_pending_payments",
+                    PollPendingView.as_view(),
+                    name="poll_pending_payments",
                 ),
             ]
         ),

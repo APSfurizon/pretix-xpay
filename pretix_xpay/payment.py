@@ -127,7 +127,7 @@ class XPayPaymentProvider(BasePaymentProvider):
     def payment_control_render(self, request, payment) -> str: # It should return to admins HTML code containing information regarding the current payment status and, if applicable, next steps. NOT MANDATORY
         template = get_template("pretix_xpay/control.html")
         payment_info = json.loads(payment.info) if payment.info else None
-        ctx = {"request": request, "event": self.event, "settings": self.settings, "payment_info": payment_info, "payment": payment, "method": self.method, "provider": self}
+        ctx = {"request": request, "event": self.event, "settings": self.settings, "payment_info": payment_info, "payment": payment, "provider": self}
         return template.render(ctx)
 
     # TODO: Controllare se viene cancellata la roba giusta

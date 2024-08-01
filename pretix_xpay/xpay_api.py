@@ -168,6 +168,10 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
         "mac": hmac
     }
     result = post_api_call(provider, ENDPOINT_ORDERS_STATUS, body)
+    if(result["esito"] == "ko"):
+        raise PaymentException(_('Unable to check the order status for %s.') % transaction_code)
+    if(result["esito"] != "ok"):
+        raise PaymentException(_('Invalid parameter "esito" (%s) for %s.') % result["esito"], transaction_code)
 
     hmac = generate_mac([
             ("esito", result["esito"]),

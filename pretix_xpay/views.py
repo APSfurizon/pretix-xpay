@@ -80,16 +80,18 @@ class ReturnView(XPayOrderView, View):
         return self._handle(request.GET.dict())
         
     def _handle(self, data: dict):
-        if not xpay.return_page_validate_digest(self.request, self.pprov):
-            messages.error(self.request, _("Sorry, we could not validate the payment result. Please try again or contact the event organizer to check if your payment was successful."))
-            return self._redirect_to_order()
 
         if self.kwargs.get("result") == "ko":
             self.payment.fail(info=dict(data.items()), log_data={"result": self.kwargs.get("result"), **dict(data.items())} )
             messages.error(self.request, _("The payment has failed. You can click below to try again."))
             return self._redirect_to_order()
         
+        
         elif self.kwargs.get("result") == "ok":
+            if not xpay.return_page_validate_digest(self.request, self.pprov):
+                messages.error(self.request, _("Sorry, we could not validate the payment result. Please try again or contact the event organizer to check if your payment was successful."))
+                return self._redirect_to_order()
+            
             try:
                 # On success, return gracefully, otherwise throws a PaymentException
                 self.process_result(data, self.payment, self.pprov)
@@ -126,3 +128,11 @@ class RedirectView(XPayOrderView, TemplateView):
         ctx["url"] = xpay.initialize_payment_get_url(self.pprov)
         ctx["params"] = xpay.initialize_payment_get_params(self.pprov, self.payment, kwargs["order"], kwargs["hash"], kwargs["payment"])
         return ctx
+    
+# This is for testing purpose
+@method_decorator(xframe_options_exempt, "dispatch")
+class PollPendingView(View):
+    def get(self, request: HttpRequest, *args, **kwargs):
+        from pretix_xpay.signals import poll_pending_payments
+        poll_pending_payments(None)
+        return "stocazzooo"

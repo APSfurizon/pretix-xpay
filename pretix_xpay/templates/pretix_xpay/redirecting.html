@@ -3,11 +3,14 @@
 {% load static %}
 <!DOCTYPE html>
 <html>
-<head>
+	<head>
 	<title>{% trans "Redirecting..." %}</title>
 	{% compress css %}
-		<link rel="stylesheet" type="text/x-scss" href="{% static "pretixbase/scss/cachedfiles.scss" %}"/>
+	<link rel="stylesheet" type="text/x-scss" href="{% static "pretixbase/scss/cachedfiles.scss" %}"/>
 	{% endcompress %}
+	{% compress js %}
+        <script type="text/javascript" src="{% static "pretix_xpay/redirect.js" %}"></script>
+    {% endcompress %}
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
@@ -33,10 +36,4 @@
 		</form>
 	</div>
 </body>
-<script>
-	//TODO: this is not called :(
-	document.addEventListener("DOMContentLoaded", function(event) { 
-		document.getElementById("redirectForm").submit();
-	});
-</script>
 </html>

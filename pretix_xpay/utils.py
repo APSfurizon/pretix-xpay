@@ -20,17 +20,7 @@ from pretix_xpay.constants import XPAY_OPERATION_RECORD, XPAY_OPERATION_REFUND, 
 logger = logging.getLogger(__name__)
 
 def encode_order_id(orderPayment: OrderPayment, event: Event, newAttempt: bool = False) -> str:
-    attempt_id = 0
-    if "attempt_counter" not in orderPayment.info_data:
-        orderPayment.info_data["attempt_counter"] = 0
-        orderPayment.save(update_fields=["info"])
-    elif newAttempt:
-        attempt_id = int(orderPayment.info_data["attempt_counter"]) + 1
-        orderPayment.info_data["attempt_counter"] = attempt_id
-        orderPayment.save(update_fields=["info"])
-    else:
-        attempt_id = int(orderPayment.info_data["attempt_counter"])
-    data: str = f"{event.organizer.slug}{event.slug}{orderPayment.full_id}{attempt_id}"
+    data: str = f"{event.organizer.slug}{event.slug}{orderPayment.full_id}gabibbo"
     return hashlib.sha256(data.encode('utf-8')).hexdigest()[:18]
 
 def generate_mac(data: list, provider: BasePaymentProvider) -> str:
