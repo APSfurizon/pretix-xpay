@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django_scopes import scopes_disabled
 from pretix.base.models import OrderPayment, Order, Quota
 from pretix.base.settings import settings_hierarkey
+from pretix.base.settings import SettingsSandbox
 from pretix.base.signals import (
     logentry_display,
     periodic_task,
@@ -28,16 +29,20 @@ def pretixcontrol_logentry_display(sender, logentry, **kwargs):
         return
     return _("XPay reported an event (Status {status}).").format(status=logentry.parsed_data.get("STATUS", "?"))
 
+# TODO: Possible race condition: The user pay successfully, but the server dies. The server than comes again online and the user tries to pay again. In the meanwhile the periodictask is fired which confirms the previous payment. The user makes a new payment -> double payment
 @receiver(periodic_task, dispatch_uid="payment_xpay_periodic_poll")
 @scopes_disabled()
 def poll_pending_payments(sender, **kwargs):
-    for payment in OrderPayment.objects.filter(provider__startswith="xpay_", state__in=[OrderPayment.PAYMENT_STATE_PENDING, OrderPayment.PAYMENT_STATE_CREATED]):
-        mins = payment.provider.settings.poll_pending_timeout if payment.provider.settings.poll_pending_timeout else 60
+    for payment in OrderPayment.objects.filter(provider="xpay", state__in=[OrderPayment.PAYMENT_STATE_PENDING, OrderPayment.PAYMENT_STATE_CREATED]):
+        settings = SettingsSandbox("payment", "xpay", payment.order.event)
+        mins = int(settings.poll_pending_timeout) if settings.poll_pending_timeout else 60
+
         if payment.created < now() - timedelta(minutes=mins):
             payment.fail(log_data={"result": "poll_timeout"})
             continue
         if payment.order.status != Order.STATUS_EXPIRED and payment.order.status != Order.STATUS_PENDING:
             continue
+
         try:
             provider = payment.payment_provider
             data = get_order_status(payment=payment, provider=provider)
@@ -67,9 +72,8 @@ def poll_pending_payments(sender, **kwargs):
             else:
                 logger.exception(f"XPAY_periodic [{payment.full_id}]: Unrecognized payment status: {data.status}")
 
-        except Exception:
-            logger.exception(f"XPAY_periodic [{payment.full_id}]: Could not poll transaction status")
-
+        except Exception as e:
+            logger.exception(f"XPAY_periodic [{payment.full_id}]: Exception in polling transaction status: {repr(e)}")
 
 settings_hierarkey.add_default("payment_xpay_hash", "sha1", str)
 settings_hierarkey.add_default("poll_pending_timeout", 60, int)

@@ -164,14 +164,14 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     body = {
         "apiKey": alias_key,
         "codiceTransazione": transaction_code,
-        "timestamp": timestamp,
+        "timeStamp": timestamp,
         "mac": hmac
     }
     result = post_api_call(provider, ENDPOINT_ORDERS_STATUS, body)
-    if(result["esito"] == "ko"):
-        raise PaymentException(_('Unable to check the order status for %s.') % transaction_code)
-    if(result["esito"] != "ok"):
-        raise PaymentException(_('Invalid parameter "esito" (%s) for %s.') % result["esito"], transaction_code)
+    if(result["esito"] == "KO"):
+        raise PaymentException(_('Unable to check the order status for %s. Error code: %d. Error message: "%s"') % (transaction_code, result["errore"]["codice"], result["errore"]["messaggio"]))
+    if(result["esito"] != "OK"):
+        raise PaymentException(_('Invalid parameter "esito" (%s) for %s.') % (result["esito"], transaction_code))
 
     hmac = generate_mac([
             ("esito", result["esito"]),
@@ -181,7 +181,7 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     if(hmac != result["mac"]):
         raise PaymentException(_('Unable to validate the order status for %s.') % transaction_code)
     
-    return OrderStatus(result)
+    return OrderStatus(transaction_code, result)
 
 def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
     try:

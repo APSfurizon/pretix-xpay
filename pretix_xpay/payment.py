@@ -71,6 +71,7 @@ class XPayPaymentProvider(BasePaymentProvider):
                 forms.IntegerField(
                     label=_("Poll pending timeout (mins)"),
                     min_value = 1,
+                    max_value = 50000000,
                     step_size = 1,
                     help_text=_(
                         'Pending and newly created payment orders are refreshed with regular intervals, to check if the user have actually paid, but left the process of returning back to pretix\'s pages.'

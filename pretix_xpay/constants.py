@@ -4,7 +4,7 @@ PROD_URL = "https://ecommerce.nexi.it/ecomm/"
 ENDPOINT_ORDERS_CREATE = f"ecomm/DispatcherServlet"
 ENDPOINT_ORDERS_CONFIRM = f"api/bo/contabilizza"
 ENDPOINT_ORDERS_CANCEL = f"api/bo/storna"
-ENDPOINT_ORDERS_STATUS = f"ecomm/api/bo/situazioneOrdine"
+ENDPOINT_ORDERS_STATUS = f"api/bo/situazioneOrdine"
 
 DOCS_TEST_CARDS_URL = "https://ecommerce.nexi.it/area-test"
 

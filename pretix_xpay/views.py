@@ -135,4 +135,4 @@ class PollPendingView(View):
     def get(self, request: HttpRequest, *args, **kwargs):
         from pretix_xpay.signals import poll_pending_payments
         poll_pending_payments(None)
-        return "stocazzooo"
+        return HttpResponse("stocazzoooo", content_type="text/plain")
