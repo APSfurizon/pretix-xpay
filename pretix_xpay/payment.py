@@ -1,22 +1,18 @@
-import hashlib
 import json
 import logging
-import requests
 import pretix_xpay.xpay_api as xpay
 from collections import OrderedDict
 from django import forms
 from django.http import HttpRequest
 from django.template.loader import get_template
-from django.utils.functional import lazy
 from django.utils.translation import gettext_lazy as _
-from lxml import etree
 from pretix.base.forms import SecretKeySettingsField
-from pretix.base.models import Event, OrderPayment, OrderRefund
+from pretix.base.models import Event, OrderPayment
 from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.base.settings import SettingsSandbox
-from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
+from pretix.multidomain.urlreverse import eventreverse
 from pretix_xpay.constants import TEST_URL, DOCS_TEST_CARDS_URL, HASH_TAG, XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_RECORDED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
-
+from pretix_xpay.utils import send_refund_needed_email
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +77,16 @@ class XPayPaymentProvider(BasePaymentProvider):
                     ),
                 ),
             ),
+            (
+                "payment_error_email", # Email address to send manual refund requests to
+                forms.EmailField(
+                    label=_("Failed payments email address"),
+                    help_text=_(
+                        'Enter an email address recipient for manual verification requests.'
+                        'It might happen because of a failed refund request, or an already recorded payment.'
+                    ),
+                )
+            ),
         ] + list(super().settings_form_fields.items())
         d = OrderedDict(fields)
         d.move_to_end("_enabled", last=False)
@@ -122,7 +128,7 @@ class XPayPaymentProvider(BasePaymentProvider):
             elif order_status.status in XPAY_RESULT_RECORDED:
                 logger.info(f"XPAY_cancelPayment [{payment.full_id}]: Preauth payment was already settled!")
                 payment.fail(_("Tried canceling the payment, but the preauth was already settled. MANUAL REFUND NEEDED!"))
-                # TODO: send email
+                send_refund_needed_email(payment, origin="XPayPaymentProvider.cancel_payment")
                 raise "Preauth payment was already settled"
 
             elif order_status.status in XPAY_RESULT_REFUNDED or order_status.status in XPAY_RESULT_CANCELED:
@@ -155,13 +161,17 @@ class XPayPaymentProvider(BasePaymentProvider):
         ctx = {"request": request, "event": self.event, "settings": self.settings, "payment_info": payment_info, "payment": payment, "provider": self}
         return template.render(ctx)
 
-    # TODO: Controllare se viene cancellata la roba giusta
     def shred_payment_info(self, obj: OrderPayment):
-       if not obj.info:
-           return
+       if not obj.info: return
+       
        d = json.loads(obj.info)
-       if "details" in d:
-           d["details"] = {k: "█" for k in d["details"].keys()}
+       if "cognome" in d: d["cognome"] = "█"
+       if "mail" in d: d["mail"] = "█"
+       if "nome" in d: d["nome"] = "█"
+       if "pan" in d: d["pan"] = "█"
+       if "regione" in d: d["regione"] = "█"
+       if "scadenza_pan" in d: d["scadenza_pan"] = "█"
+       if "tipoProdotto" in d: d["tipoProdotto"] = "█"
 
        d["_shredded"] = True
        obj.info = json.dumps(d)

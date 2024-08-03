@@ -16,6 +16,7 @@ from pretix.base.signals import (
 
 from pretix_xpay.payment import XPayPaymentProvider
 from pretix_xpay.constants import XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_RECORDED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
+from pretix_xpay.utils import send_refund_needed_email
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,6 @@ def pretixcontrol_logentry_display(sender, logentry, **kwargs):
         return
     return _("XPay reported an event (Status {status}).").format(status=logentry.parsed_data.get("STATUS", "?"))
 
-# TODO: Possible race condition: The user pay successfully, but the server dies. The server than comes again online and the user tries to pay again. In the meanwhile the periodictask is fired which confirms the previous payment. The user makes a new payment -> double payment
 @receiver(periodic_task, dispatch_uid="payment_xpay_periodic_poll")
 @scopes_disabled()
 def poll_pending_payments(sender, **kwargs):
@@ -57,7 +57,7 @@ def poll_pending_payments(sender, **kwargs):
                 except Quota.QuotaExceededException:
                     logger.info(f"XPAY_periodic [{payment.full_id}]: Canceling payment quota was exceeded")
                     payment.fail(info=_("Tried confirming payment, but quota was exceeded. MANUAL REFUND NEEDED!"), log_data=data) #TODO; Check if manual fail() call is needed
-                    #TODO: send email
+                    send_refund_needed_email(payment, origin="periodic_task.poll_pending_payments")
 
             elif data.status in XPAY_RESULT_PENDING:
                 # If the payment it's still pending, weep waiting

@@ -1,22 +1,13 @@
-import hashlib
-import json
-import uuid
 import logging
 import requests 
-from collections import OrderedDict
-from django import forms
 from django.http import HttpRequest
-from django.template.loader import get_template
-from django.utils.functional import lazy
 from django.utils.translation import gettext_lazy as _
-from lxml import etree
-from pretix.base.forms import SecretKeySettingsField
-from pretix.base.models import Event, OrderPayment, OrderRefund, Order, Quota
-from pretix.base.payment import BasePaymentProvider, PaymentException
-from pretix.base.settings import SettingsSandbox
-from pretix.multidomain.urlreverse import build_absolute_uri, eventreverse
+from pretix.base.models import OrderPayment, Order, Quota
+from pretix.base.payment import PaymentException
+from pretix.multidomain.urlreverse import build_absolute_uri
 from pretix_xpay.payment import XPayPaymentProvider
-from pretix_xpay.utils import encode_order_id, generate_mac, OrderStatus
+from pretix_xpay.utils import encode_order_id, generate_mac, build_order_desc, translate_language
+from pretix_xpay.utils import OrderStatus
 from pretix_xpay.constants import *
 from time import time
 
@@ -57,8 +48,8 @@ def initialize_payment_get_params(provider: XPayPaymentProvider, payment: OrderP
                 ("importo", amount)
             ], provider),
         # "mail": payment.order.email, # Disabled because someone could create an order for somebody else. If this field is specified, xpay forces this email
-        "languageId": "ITA", #TODO
-        "descrizione": "TODO", #TODO
+        "languageId": translate_language(payment.order),
+        "descrizione": build_order_desc(payment.order),
         "TCONTAB": "D" # Preauthing first. We're gonna finalize the payment after we're sure there's enough quota and the order is marked as paid
     }
 

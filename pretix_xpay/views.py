@@ -52,7 +52,7 @@ class XPayOrderView:
         if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
             return  # race condition
         
-        payment.info_data = {**payment.info_data, **get_params} #TODO: ci stiamo salvando le cose giuste?
+        payment.info_data = {**payment.info_data, **get_params}
         payment.save(update_fields=["info"])
 
         if(get_params["esito"] in XPAY_STATUS_SUCCESS):

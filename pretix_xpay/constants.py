@@ -22,3 +22,19 @@ XPAY_RESULT_CANCELED = ["Autor. Negata", "Non Creato", "Negato", "Annullato", "A
 
 XPAY_OPERATION_RECORD = "CONTAB."
 XPAY_OPERATION_REFUND = "STORNO"
+
+# Table of supported languages by XPay: https://ecommerce.nexi.it/specifiche-tecniche/tabelleecodifiche/codificalanguageid.html
+LANGUAGE_DEFAULT = "ENG"
+LANGUAGES_TRANSLATION = {
+    "it": "ITA",
+    "en": "ENG",
+    "es": "SPA",
+    "fr": "FRA",
+    "de": "GER",
+    "jp": "JPN",
+    "cn": "CHI",
+    "zh": "CHI",
+    "ar": "ARA",
+    "ru": "RUS",
+    "pt": "POR",
+}
