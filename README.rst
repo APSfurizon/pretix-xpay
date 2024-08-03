@@ -14,6 +14,7 @@ TODO
 - <del>Auto refresh the pending orders</del>
 - Fix parametrized translations raise `python not all arguments converted during string formatting`
 - Test everything
+- messages.error()
 
 
 Flow chart
@@ -64,6 +65,37 @@ You can auto-fix some of these issues by running::
     black .
 
 To automatically check for these issues before you commit, you can run ``.install-hooks``.
+
+Stuff to Test
+-----------------
+- Pagamenti normali
+    - ✅ Test accettazione print corretta in caso di esito ko
+    - Test accettazione print corretta in caso di esito non valido
+    - process_result(): esito in pending
+    - process_result(): esito in fail
+    - process_result(): esito non valido
+    - confirm_payment_and_capture_from_preauth(): test race condition
+    - ✅ confirm_payment_and_capture_from_preauth(): confirm_payment_and_capture_from_preauth
+    - confirm_payment_and_capture_from_preauth(): quota QuotaExceededException
+- Runperiodic:
+    - ✅ Payment in timeout
+    - ✅ authorized: si testa sopra
+    - recorded: conferma
+    - recorded: QuotaExceededException
+    - pending
+    - refund o cancellato
+    - non valido
+- cancel_payment():
+    - authorized o pending
+    - recorded
+    - refunded o canceled
+- Race conditions:
+    - confirm_payment_and_capture_from_preauth(): vista sopra
+    - runperiodic: visto sopra
+    - cancel_payment: visto sopra
+- Extra:
+    - Se il pagamento è in pending, pretix ci fa ritestare?
+    - Se QuotaExceededException, va chiamato a mano payment.fail()?
 
 Debugging\
 -----------------

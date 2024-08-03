@@ -103,6 +103,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     hmac = generate_mac([
             ("esito", result["esito"]),
             ("idOperazione", result["idOperazione"]),
+            
             ("timeStamp", result["timeStamp"])
         ], provider)
     if(hmac != result["mac"]):

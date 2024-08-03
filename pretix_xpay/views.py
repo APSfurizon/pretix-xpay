@@ -96,7 +96,7 @@ class ReturnView(XPayOrderView, View):
                 # On success, return gracefully, otherwise throws a PaymentException
                 self.process_result(data, self.payment, self.pprov)
             except Quota.QuotaExceededException as e:
-                messages.error(self.request, str(e))
+                messages.error(self.request, repr(e))
             except PaymentException as e:
                 messages.error(self.request, _("The payment has failed. You can click below to try again."))
                 if self.payment.state in PENDING_OR_CREATED_STATES:

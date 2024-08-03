@@ -1,4 +1,5 @@
 import logging
+import pretix_xpay.xpay_api as xpay
 from datetime import timedelta
 from django.dispatch import receiver
 from django.utils.timezone import now
@@ -14,7 +15,6 @@ from pretix.base.signals import (
 )
 
 from pretix_xpay.payment import XPayPaymentProvider
-from pretix_xpay.xpay_api import get_order_status, confirm_payment_and_capture_from_preauth
 from pretix_xpay.constants import XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_RECORDED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
 
 logger = logging.getLogger(__name__)
@@ -45,10 +45,10 @@ def poll_pending_payments(sender, **kwargs):
 
         try:
             provider = payment.payment_provider
-            data = get_order_status(payment=payment, provider=provider)
+            data = xpay.get_order_status(payment=payment, provider=provider)
 
             if data.status in XPAY_RESULT_AUTHORIZED:
-                confirm_payment_and_capture_from_preauth(payment, provider, payment.order)
+                xpay.confirm_payment_and_capture_from_preauth(payment, provider, payment.order)
 
             elif data.status in XPAY_RESULT_RECORDED:
                 try:
@@ -57,6 +57,7 @@ def poll_pending_payments(sender, **kwargs):
                 except Quota.QuotaExceededException:
                     logger.info(f"XPAY_periodic [{payment.full_id}]: Canceling payment quota was exceeded")
                     payment.fail(info=_("Tried confirming payment, but quota was exceeded. MANUAL REFUND NEEDED!"), log_data=data) #TODO; Check if manual fail() call is needed
+                    #TODO: send email
 
             elif data.status in XPAY_RESULT_PENDING:
                 # If the payment it's still pending, weep waiting
