@@ -6,6 +6,7 @@ from django.dispatch import receiver
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from django_scopes import scopes_disabled
+from django.db import transaction
 from pretix.base.models import OrderPayment, Order, Quota
 from pretix.base.settings import settings_hierarkey
 from pretix.base.signals import (
@@ -58,9 +59,10 @@ def poll_pending_payments(sender, **kwargs):
             elif data.status in XPAY_RESULT_PENDING:
                 # If the payment it's still pending, weep waiting
                 if(payment.state == OrderPayment.PAYMENT_STATE_CREATED):
-                    logger.info(f"XPAY_periodic [{payment.full_id}]: Payment is now pending")
-                    payment.state = OrderPayment.PAYMENT_STATE_PENDING
-                    payment.save(update_fields=["state"])
+                    with transaction.atomic():
+                        logger.info(f"XPAY_periodic [{payment.full_id}]: Payment is now pending")
+                        payment.state = OrderPayment.PAYMENT_STATE_PENDING
+                        payment.save(update_fields=["state"])
 
             elif data.status in XPAY_RESULT_REFUNDED or data.status in XPAY_RESULT_CANCELED:
                 logger.info(f"XPAY_periodic [{payment.full_id}]: Canceling payment because found in a refounded or canceled status: {data.status}")

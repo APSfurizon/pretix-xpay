@@ -81,7 +81,6 @@ class ReturnView(XPayOrderView, View):
         return self._handle(request.GET.dict())
         
     def _handle(self, data: dict):
-
         if self.kwargs.get("result") == "ko":
             self.payment.fail(info=dict(data.items()), log_data={"result": self.kwargs.get("result"), **dict(data.items())} )
             messages.error(self.request, _("The payment has failed. You can click below to try again."))

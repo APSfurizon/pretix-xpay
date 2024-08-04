@@ -5,7 +5,7 @@ from pretix.base.models import Order, Event, OrderPayment, OrderPosition
 from pretix.base.payment import BasePaymentProvider
 from pretix.base.settings import SettingsSandbox
 from datetime import datetime
-from pretix_xpay.constants import LANGUAGE_DEFAULT, LANGUAGES_TRANSLATION
+from pretix_xpay.constants import LANGUAGE_DEFAULT, LANGUAGES_TRANSLATION, XPAY_RESULT_CANCELED
 from i18nfield.strings import LazyI18nString
 from pretix.base.services.mail import mail
 
@@ -72,12 +72,18 @@ class OrderOperation:
 
 class OrderStatus:
     def __init__(self, transaction_id: str, data: dict):
+        self.operations = []
         # Throw if outside data is unparseable
         is_valid = data and isinstance(data, dict) and "esito" in data and data["esito"] == "OK"
         is_valid = is_valid and "report" in data and isinstance(data["report"], list)
         is_valid = is_valid and len(data["report"]) > 0 and isinstance(data["report"][0], dict)
         if not is_valid: raise ValueError(_('Could not parse order %s') % transaction_id)
         report = data["report"][0]
+
+        # If order is not created
+        if report["stato"] in XPAY_RESULT_CANCELED:
+            self.fallback_status = report["stato"]
+            return
 
         # Throw if report data is unparseable
         is_valid = is_valid and "codiceTransazione" in report and report["codiceTransazione"] == transaction_id
@@ -91,7 +97,6 @@ class OrderStatus:
         if not is_valid: raise ValueError(_('Could not parse order %s') % transaction_id)
 
         self.fallback_status = details["stato"]
-        self.operations = []
         if "operazioni" in details and isinstance(details["operazioni"], list):
             for op in details["operazioni"]:
                 op_to_add = OrderOperation(op)
