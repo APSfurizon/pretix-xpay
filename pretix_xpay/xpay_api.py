@@ -137,10 +137,10 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
             ("timeStamp", result["timeStamp"])
         ], provider)
 
-    if(result["esito"] == "ko"):
+    if(result["esito"] == "KO"):
         send_refund_needed_email(payment, "xpay.refund_preauth-ko")
         raise PaymentException(_('Preauth refund request failed with error code %s: %s. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
-    elif(result["esito"] == "ok"):
+    elif(result["esito"] == "OK"):
         if(hmac != result["mac"]):
             send_refund_needed_email(payment, "xpay.refund_preauth-hmac")
             raise PaymentException(_('Unable to validate the preauth refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
