@@ -1,5 +1,0 @@
-[plugin]
-package = "pretix-xpay"
-modules = [ "pretix_xpay" ]
-marketplace_name = "xpay"
-
