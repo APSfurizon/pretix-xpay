@@ -15,6 +15,7 @@ from django_scopes import scopes_disabled
 from pretix.base.models import Event, Order, OrderPayment, Quota
 from pretix.base.payment import PaymentException
 from pretix.multidomain.urlreverse import eventreverse
+from pretix_xpay.utils import get_settings_object
 from pretix_xpay.payment import XPayPaymentProvider
 from pretix_xpay.constants import XPAY_STATUS_SUCCESS, XPAY_STATUS_FAILS, XPAY_STATUS_PENDING, HASH_TAG
 
@@ -27,10 +28,7 @@ class XPayOrderView:
     def dispatch(self, request, *args, **kwargs):
         try:
             event: Event = request.event if hasattr(request, "event") else Event.objects.get(slug=kwargs.get("event"), organizer__slug=kwargs.get("organizer"))
-            if "hash" in kwargs:
-                self.order = event.orders.get_with_secret_check(code=kwargs["order"], received_secret=kwargs["hash"], tag=HASH_TAG)
-            else:
-                self.order = event.orders.gept(code=kwargs["order"])
+            self.order: Order = event.orders.get_with_secret_check(code=kwargs["order"], received_secret=kwargs["hash"], tag=HASH_TAG)
         except Order.DoesNotExist:
             raise Http404("Unknown order")
         return super().dispatch(request, *args, **kwargs)
@@ -130,15 +128,28 @@ class RedirectView(XPayOrderView, TemplateView):
         ctx["params"] = xpay.initialize_payment_get_params(self.pprov, self.payment, kwargs["order"], kwargs["hash"], kwargs["payment"])
         return ctx
     
-# This is for testing purpose
+
+
+
+# These are for testing purpose
+
 @method_decorator(xframe_options_exempt, "dispatch")
 class PollPendingView(View):
     def get(self, request: HttpRequest, *args, **kwargs):
         from pretix_xpay.signals import poll_pending_payments
-        poll_pending_payments(None)
-        return HttpResponse("stocazzoooo", content_type="text/plain")
-#@method_decorator(xframe_options_exempt, "dispatch")
-#class ManualRefundView(View):
-#    def get(self, request: HttpRequest, *args, **kwargs):
-#        from pretix_xpay.utils import send_refund_needed_email
-#        return HttpResponse("stocazzoooo", content_type="text/plain")
+        event: Event = Event.objects.get(slug=kwargs.get("event"), organizer__slug=kwargs.get("organizer"))
+        if event.testmode:
+            settings = get_settings_object(self.order.event)
+            if settings.enable_test_endpoints:
+                poll_pending_payments(None)
+                return HttpResponse("ok", content_type="text/plain")
+        return HttpResponse("nope", content_type="text/plain")
+@method_decorator(xframe_options_exempt, "dispatch")
+class ManualRefundEmailView(XPayOrderView, View):
+    def get(self, request: HttpRequest, *args, **kwargs):
+        from pretix_xpay.utils import send_refund_needed_email
+        if self.order.event.testmode:
+            settings = get_settings_object(self.order.event)
+            if settings.enable_test_endpoints:
+                send_refund_needed_email(self.order, origin="Testing! :3")
+                return HttpResponse("nope", content_type="text/plain")

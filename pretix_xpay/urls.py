@@ -1,6 +1,6 @@
 from django.urls import include, path, re_path
 
-from .views import ReturnView, RedirectView, PollPendingView#, ManualRefundView
+from .views import ReturnView, RedirectView, PollPendingView, ManualRefundEmailView
 
 event_patterns = [
     re_path(
@@ -22,11 +22,11 @@ event_patterns = [
                     PollPendingView.as_view(),
                     name="poll_pending_payments",
                 ),
-                #path( # Test purpose
-                #    "test_manual_refund_email",
-                #    ManualRefundView.as_view(),
-                #    name="test_manual_refund_email",
-                #),
+                path( # Test purpose
+                    "test_manual_refund_email/<str:order>/<str:hash>/<str:payment>/",
+                    ManualRefundEmailView.as_view(),
+                    name="test_manual_refund_email",
+                ),
             ]
         ),
     ),

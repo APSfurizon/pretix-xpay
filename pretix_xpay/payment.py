@@ -87,6 +87,15 @@ class XPayPaymentProvider(BasePaymentProvider):
                     ),
                 )
             ),
+            (
+                "enable_test_endpoints",
+                forms.BooleanField(
+                    label=_("Enable test endpoints"),
+                    help_text=_(
+                        'This enables the endpoints /poll_pending_payments and /test_manual_refund_email for events in testmode'
+                    ),
+                )
+            ),
         ] + list(super().settings_form_fields.items())
         d = OrderedDict(fields)
         d.move_to_end("_enabled", last=False)
@@ -129,7 +138,7 @@ class XPayPaymentProvider(BasePaymentProvider):
                 raise Exception(f"Unknown state: {order_status.status}")
 
         except BaseException as e:
-            logger.error(f"An error occurred while trying to cancel the payment {payment.full_id}: {repr(e)}")
+            logger.warning(f"A warning occurred while trying to cancel the payment {payment.full_id}: {repr(e)}")
 
         
     

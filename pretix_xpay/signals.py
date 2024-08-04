@@ -80,3 +80,4 @@ def poll_pending_payments(sender, **kwargs):
 
 settings_hierarkey.add_default("payment_xpay_hash", "sha1", str)
 settings_hierarkey.add_default("poll_pending_timeout", 60, int)
+settings_hierarkey.add_default("enable_test_endpoints", False, bool)

@@ -100,14 +100,17 @@ Stuff to Test
     - ✅ scaduto
 - cancel_payment():
     - ✅ authorized o pending
-    - recorded
-    - refunded o canceled
-    - unknown
+    - ✅ recorded
+    - ✅ refunded o canceled
+    - ✅ unknown
     - ✅ 404
 - Race conditions:
     - ✅ confirm_payment_and_capture_from_preauth(): vista sopra
     - ✅ runperiodic: visto sopra
     - cancel_payment: visto sopra
+- Extra endpoints protection:
+    - poll_pending_payments
+    - test_manual_refund_email
 - Extra:
     - ✅ Test email
     - ✅ Se il pagamento è in pending, pretix ci fa ritestare?
