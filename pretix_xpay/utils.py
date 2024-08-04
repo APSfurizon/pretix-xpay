@@ -44,8 +44,17 @@ def translate_language(order: Order) -> str:
 def build_order_desc(order: Order) -> str:
     itemNames = []
     p: OrderPosition
-    for p in order.positions: itemNames.append(p.item.name)
+    for p in order.positions.all() : itemNames.append(get_translated_text(p.item.name, order))
     return f"[{order.event.organizer.name} / {order.event.name}] Order {order.code}: {', '.join(itemNames)}"
+
+def get_translated_text(value, order: Order) -> str:
+    if isinstance(value, LazyI18nString):
+        lazy: LazyI18nString = value
+        return lazy.localize(order.locale)
+    elif isinstance(value, str):
+        return value
+    else:
+        raise ValueError('Unexpected item type')
 
 class OrderOperation:
     def __init__(self, data: dict):
