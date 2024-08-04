@@ -108,7 +108,7 @@ class XPayPaymentProvider(BasePaymentProvider):
             except Http404:
                 logger.error(f"XPAY_cancelPayment [{payment.full_id}]: Order not found")
                 super().cancel_payment(payment)
-                raise BaseException("Payment not found")
+                raise Exception("Payment not found")
 
             if order_status.status in XPAY_RESULT_AUTHORIZED or order_status.status in XPAY_RESULT_PENDING:
                 xpay.refund_preauth(payment, self)
@@ -118,14 +118,18 @@ class XPayPaymentProvider(BasePaymentProvider):
                 logger.info(f"XPAY_cancelPayment [{payment.full_id}]: Preauth payment was already settled!")
                 super().cancel_payment(payment)
                 send_refund_needed_email(payment, origin="XPayPaymentProvider.cancel_payment")
-                raise BaseException("Preauth payment was already settled")
+                raise Exception("Preauth payment was already settled")
 
             elif order_status.status in XPAY_RESULT_REFUNDED or order_status.status in XPAY_RESULT_CANCELED:
                 logger.info(f"XPAY_cancelPayment [{payment.full_id}]: Payment was already in refunded or canceled state")
                 super().cancel_payment(payment)
 
-        except Exception as e:
-            logger.error(_("An error occurred while trying to cancel the payment %s: %s") % (payment.full_id, repr(e)))
+            else:
+                super().cancel_payment(payment)
+                raise Exception(f"Unknown state: {order_status.status}")
+
+        except BaseException as e:
+            logger.error(f"An error occurred while trying to cancel the payment {payment.full_id}: {repr(e)}")
 
         
     

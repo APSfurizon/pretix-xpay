@@ -102,6 +102,7 @@ Stuff to Test
     - ✅ authorized o pending
     - recorded
     - refunded o canceled
+    - unknown
     - ✅ 404
 - Race conditions:
     - ✅ confirm_payment_and_capture_from_preauth(): vista sopra
