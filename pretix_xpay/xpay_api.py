@@ -89,7 +89,10 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         "timeStamp": timestamp,
         "mac": hmac
     }
-    result = post_api_call(provider, ENDPOINT_ORDERS_CONFIRM, body)
+    try:
+        result = post_api_call(provider, ENDPOINT_ORDERS_CONFIRM, body)
+    except Exception as e:
+        raise PaymentException(_("An error occurred with the XPay's servers while settling the order. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s. Exception: %s") % (f"{payment.order.code}-{transaction_code}", repr(e)))
 
     hmac = generate_mac([
             ("esito", result["esito"]),
@@ -98,9 +101,9 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
             ("timeStamp", result["timeStamp"])
         ], provider)
 
-    if(result["esito"] == "ko"):
+    if(result["esito"] == "KO"):
         raise PaymentException(_('Preauth confirm request failed with error code %s: %s. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
-    elif(result["esito"] == "ok"):
+    elif(result["esito"] == "OK"):
         if(hmac != result["mac"]):
             raise PaymentException(_('Unable to validate the preauth confirm. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
         pass # If the process is ok, we're done
@@ -129,7 +132,11 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         "timeStamp": timestamp,
         "mac": hmac
     }
-    result = post_api_call(provider, ENDPOINT_ORDERS_CANCEL, body)
+    try:
+        result = post_api_call(provider, ENDPOINT_ORDERS_CANCEL, body)
+    except Exception as e:
+        send_refund_needed_email(payment, "xpay.refund_preauth-expPost")
+        raise PaymentException(_("An error occurred with the XPay's servers while issuing a refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s. Exception: %s") % (f"{payment.order.code}-{transaction_code}", repr(e)))
 
     hmac = generate_mac([
             ("esito", result["esito"]),
@@ -199,9 +206,9 @@ def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XP
         
     except Quota.QuotaExceededException as e:
         # Payment failed, cancel the preauthorized money
-        refund_preauth(payment, provider)
         logger.info(f"XPAY [{payment.full_id}]: Tried confirming payment, but quota was exceeded")
-        #payment.fail(info={"error": str(_("Tried confirming payment, but quota was exceeded"))}) #TODO; Check if manual fail() call is needed
+        payment.fail(info={"error": str(_("Tried confirming payment, but quota was exceeded"))})
+        refund_preauth(payment, provider)
 
         raise e
 

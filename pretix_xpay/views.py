@@ -44,32 +44,32 @@ class XPayOrderView:
         return get_object_or_404(self.order.payments, pk=self.kwargs["payment"], provider__istartswith="xpay")
 
     # On success, return gracefully, otherwise throws a PaymentException
-    @transaction.atomic()
     def process_result(self, get_params: dict, payment: OrderPayment, provider: XPayPaymentProvider):
-        # Recover order payment
-        payment = OrderPayment.objects.select_for_update().get(pk=payment.pk)
+        with transaction.atomic():
+            # Recover order payment
+            payment = OrderPayment.objects.select_for_update().get(pk=payment.pk)
 
-        if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
-            return  # race condition
-        
-        payment.info_data = {**payment.info_data, **get_params}
-        payment.save(update_fields=["info"])
+            if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
+                return  # race condition
+            
+            payment.info_data = {**payment.info_data, **get_params}
+            payment.save(update_fields=["info"])
 
-        if(get_params["esito"] in XPAY_STATUS_SUCCESS):
-            pass # go to fallback. Yes, spaghetti code :D
-        elif(get_params["esito"] in XPAY_STATUS_PENDING):
-            logger.info(f"XPAY_return [{payment.full_id}]: Payment is now pending")
-            messages.info(self.request, _("You payment is now pending. You will be notified either if the payment is confirmed or not."))
-            payment.state = OrderPayment.PAYMENT_STATE_PENDING
-            payment.save(update_fields=["state"])
-            return
-        elif(get_params["esito"] in XPAY_STATUS_FAILS):
-            logger.info(f"XPAY_return [{payment.full_id}]: Payment is now failed")
-            messages.error(self.request, _("The payment has failed. You can click below to try again."))
-            payment.fail(info={"error": str(_("Payment result is in a failed status"))})
-            return
-        else:
-            raise PaymentException("Unrecognized state.")
+            if(get_params["esito"] in XPAY_STATUS_SUCCESS):
+                pass # go to fallback. Yes, spaghetti code :D
+            elif(get_params["esito"] in XPAY_STATUS_PENDING):
+                logger.info(f"XPAY_return [{payment.full_id}]: Payment is now pending")
+                messages.info(self.request, _("You payment is now pending. You will be notified either if the payment is confirmed or not."))
+                payment.state = OrderPayment.PAYMENT_STATE_PENDING
+                payment.save(update_fields=["state"])
+                return
+            elif(get_params["esito"] in XPAY_STATUS_FAILS):
+                logger.info(f"XPAY_return [{payment.full_id}]: Payment is now failed")
+                messages.error(self.request, _("The payment has failed. You can click below to try again."))
+                payment.fail(info={"error": str(_("Payment result is in a failed status"))})
+                return
+            else:
+                raise PaymentException("Unrecognized state.")
 
         # Fallback if payment is success
         xpay.confirm_payment_and_capture_from_preauth(payment, provider, self.order)
