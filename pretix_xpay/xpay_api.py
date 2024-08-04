@@ -14,7 +14,7 @@ from time import time
 logger = logging.getLogger(__name__)
 
 def initialize_payment_get_params(provider: XPayPaymentProvider, payment: OrderPayment, order_code: str, order_salted_hash: str, payment_pk) -> dict:
-    transaction_code = encode_order_id(payment, provider.event, True)
+    transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
 
     return {
