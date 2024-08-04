@@ -1,6 +1,7 @@
 import logging
 import pretix_xpay.xpay_api as xpay
 from datetime import timedelta
+from django.http import Http404
 from django.dispatch import receiver
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
@@ -37,9 +38,6 @@ def poll_pending_payments(sender, **kwargs):
         settings = SettingsSandbox("payment", "xpay", payment.order.event)
         mins = int(settings.poll_pending_timeout) if settings.poll_pending_timeout else 60
 
-        if payment.created < now() - timedelta(minutes=mins):
-            payment.fail(log_data={"result": "poll_timeout"})
-            continue
         if payment.order.status != Order.STATUS_EXPIRED and payment.order.status != Order.STATUS_PENDING:
             continue
 
@@ -72,6 +70,11 @@ def poll_pending_payments(sender, **kwargs):
 
             else:
                 logger.exception(f"XPAY_periodic [{payment.full_id}]: Unrecognized payment status: {data.status}")
+
+        except Http404 as e:
+            if payment.order.status == Order.STATUS_EXPIRED and payment.created < now() - timedelta(minutes=mins):
+                logger.exception(f"XPAY_periodic [{payment.full_id}]: Setting payment status to fail due to expired order and poll_pending_timeout reached")
+                payment.fail(log_data={"result": "poll_timeout"})
 
         except Exception as e:
             logger.exception(f"XPAY_periodic [{payment.full_id}]: Exception in polling transaction status: {repr(e)}")

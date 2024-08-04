@@ -1,6 +1,6 @@
 import logging
 import requests 
-from django.http import HttpRequest
+from django.http import HttpRequest, Http404
 from django.utils.translation import gettext_lazy as _
 from pretix.base.models import OrderPayment, Order, Quota
 from pretix.base.payment import PaymentException
@@ -161,6 +161,8 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     }
     result = post_api_call(provider, ENDPOINT_ORDERS_STATUS, body)
     if(result["esito"] == "KO"):
+        if result["errore"]["codice"] == 2:
+            raise Http404("Order not found")
         raise PaymentException(_('Unable to check the order status for %s. Error code: %d. Error message: "%s"') % (transaction_code, result["errore"]["codice"], result["errore"]["messaggio"]))
     if(result["esito"] != "OK"):
         raise PaymentException(_('Invalid parameter "esito" (%s) for %s.') % (result["esito"], transaction_code))
