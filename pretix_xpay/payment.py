@@ -101,22 +101,6 @@ class XPayPaymentProvider(BasePaymentProvider):
             )
         return None
     
-    @property
-    def identifier(self):
-        return "xpay"
-    
-    def payment_refund_supported(self, payment: OrderPayment) -> bool:
-        return False
-
-    def payment_partial_refund_supported(self, payment: OrderPayment) -> bool:
-        return False
-    
-    def payment_prepare(self, request, payment):
-        return self.checkout_prepare(request, None)
-    
-    def payment_is_valid_session(self, request: HttpRequest):
-        return True
-    
     def cancel_payment(self, payment: OrderPayment):
         try:
             order_status = xpay.get_order_status(payment=payment, provider=self)
@@ -190,3 +174,20 @@ class XPayPaymentProvider(BasePaymentProvider):
         )
     
 
+
+    # Mandatory properties for the plugin to work
+    @property
+    def identifier(self):
+        return "xpay"
+    
+    def payment_refund_supported(self, payment: OrderPayment) -> bool:
+        return False
+
+    def payment_partial_refund_supported(self, payment: OrderPayment) -> bool:
+        return False
+    
+    def payment_prepare(self, request, payment):
+        return self.checkout_prepare(request, None)
+    
+    def payment_is_valid_session(self, request: HttpRequest):
+        return True
