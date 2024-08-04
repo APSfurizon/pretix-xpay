@@ -9,12 +9,12 @@ This implements the XPay Italian legacy system (https://ecommerce.nexi.it/specif
 
 TODO
 ----
-- Do the TODO
-- <del>Solve the generation of orderId</del>
-- <del>Auto refresh the pending orders</del>
-- Fix parametrized translations raise `python not all arguments converted during string formatting`
+- ✅ Do the TODO
+- ✅ Solve the generation of orderId
+- ✅ Auto refresh the pending orders
+- ✅ Fix parametrized translations raise `python not all arguments converted during string formatting`
 - Test everything
-- messages.error()
+- ✅ messages.error()
 
 
 Flow chart
