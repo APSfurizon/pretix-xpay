@@ -66,7 +66,7 @@ class XPayOrderView:
         elif(get_params["esito"] in XPAY_STATUS_FAILS):
             logger.info(f"XPAY_return [{payment.full_id}]: Payment is now failed")
             messages.error(self.request, _("The payment has failed. You can click below to try again."))
-            payment.fail(info={"error": _("Payment result is in a failed status")})
+            payment.fail(info={"error": str(_("Payment result is in a failed status"))})
             return
         else:
             raise PaymentException("Unrecognized state.")

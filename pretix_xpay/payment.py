@@ -111,7 +111,7 @@ class XPayPaymentProvider(BasePaymentProvider):
 
             elif order_status.status in XPAY_RESULT_RECORDED:
                 logger.info(f"XPAY_cancelPayment [{payment.full_id}]: Preauth payment was already settled!")
-                payment.fail(info={"error": _("Tried canceling the payment, but the preauth was already settled. MANUAL REFUND NEEDED!")})
+                payment.fail(info={"error": str(_("Tried canceling the payment, but the preauth was already settled. MANUAL REFUND NEEDED!"))})
                 send_refund_needed_email(payment, origin="XPayPaymentProvider.cancel_payment")
                 raise "Preauth payment was already settled"
 

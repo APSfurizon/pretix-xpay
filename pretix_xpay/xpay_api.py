@@ -201,7 +201,7 @@ def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XP
         # Payment failed, cancel the preauthorized money
         refund_preauth(payment, provider)
         logger.info(f"XPAY [{payment.full_id}]: Tried confirming payment, but quota was exceeded")
-        #payment.fail(info={"error": _("Tried confirming payment, but quota was exceeded")}) #TODO; Check if manual fail() call is needed
+        #payment.fail(info={"error": str(_("Tried confirming payment, but quota was exceeded"))}) #TODO; Check if manual fail() call is needed
 
         raise e
 
