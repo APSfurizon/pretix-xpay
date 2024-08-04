@@ -3,7 +3,7 @@ import logging
 import pretix_xpay.xpay_api as xpay
 from collections import OrderedDict
 from django import forms
-from django.http import HttpRequest
+from django.http import HttpRequest, Http404
 from django.template.loader import get_template
 from django.utils.translation import gettext_lazy as _
 from pretix.base.forms import SecretKeySettingsField
@@ -103,7 +103,12 @@ class XPayPaymentProvider(BasePaymentProvider):
     
     def cancel_payment(self, payment: OrderPayment):
         try:
-            order_status = xpay.get_order_status(payment=payment, provider=self)
+            try:
+                order_status = xpay.get_order_status(payment=payment, provider=self)
+            except Http404:
+                logger.error(f"XPAY_cancelPayment [{payment.full_id}]: Order not found")
+                super().cancel_payment(payment)
+                raise BaseException("Payment not found")
 
             if order_status.status in XPAY_RESULT_AUTHORIZED or order_status.status in XPAY_RESULT_PENDING:
                 xpay.refund_preauth(payment, self)
@@ -111,16 +116,17 @@ class XPayPaymentProvider(BasePaymentProvider):
 
             elif order_status.status in XPAY_RESULT_RECORDED:
                 logger.info(f"XPAY_cancelPayment [{payment.full_id}]: Preauth payment was already settled!")
-                payment.fail(info={"error": str(_("Tried canceling the payment, but the preauth was already settled. MANUAL REFUND NEEDED!"))})
+                super().cancel_payment(payment)
                 send_refund_needed_email(payment, origin="XPayPaymentProvider.cancel_payment")
-                raise "Preauth payment was already settled"
+                raise BaseException("Preauth payment was already settled")
 
             elif order_status.status in XPAY_RESULT_REFUNDED or order_status.status in XPAY_RESULT_CANCELED:
                 logger.info(f"XPAY_cancelPayment [{payment.full_id}]: Payment was already in refunded or canceled state")
                 super().cancel_payment(payment)
 
         except Exception as e:
-            raise PaymentException(_("An error occurred while trying to cancel the payment %s: %s") % (payment.full_id, repr(e)))
+            logger.error(_("An error occurred while trying to cancel the payment %s: %s") % (payment.full_id, repr(e)))
+
         
     
     def payment_form_render(self, request) -> str: # Should return an explainatory paragraph

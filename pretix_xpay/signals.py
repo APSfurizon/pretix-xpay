@@ -52,7 +52,6 @@ def poll_pending_payments(sender, **kwargs):
                     logger.info(f"XPAY_periodic [{payment.full_id}]: Payment confirmed with status {data.status}")
                 except Quota.QuotaExceededException:
                     logger.info(f"XPAY_periodic [{payment.full_id}]: Canceling payment quota was exceeded")
-                    payment.fail(info={"error": str(_("Tried confirming payment, but quota was exceeded. MANUAL REFUND NEEDED!"))})
                     send_refund_needed_email(payment, origin="periodic_task.poll_pending_payments")
 
             elif data.status in XPAY_RESULT_PENDING:
@@ -63,7 +62,7 @@ def poll_pending_payments(sender, **kwargs):
                     payment.save(update_fields=["state"])
 
             elif data.status in XPAY_RESULT_REFUNDED or data.status in XPAY_RESULT_CANCELED:
-                logger.info(f"XPAY_periodic [{payment.full_id}]: Canceling payment because found in a refounded or canceled status: {data.status}")
+                logger.info(f"XPAY_periodic [{payment.full_id}]: Canceling payment because found in a refunded or canceled status: {data.status}")
                 payment.fail(info={"error": str(_("Payment in refund or canceled state"))})
 
             else:

@@ -92,23 +92,24 @@ Stuff to Test
 - Runperiodic:
     - ✅ Payment in timeout
     - ✅ authorized: si testa sopra
-    - recorded: conferma
-    - recorded: QuotaExceededException
-    - pending
-    - refund o cancellato
-    - non valido
-    - scaduto
+    - ✅ recorded: conferma
+    - ✅ recorded: QuotaExceededException
+    - ✅ pending
+    - ✅ refund o cancellato
+    - ✅ non valido
+    - ✅ scaduto
 - cancel_payment():
-    - authorized o pending
+    - ✅ authorized o pending
     - recorded
     - refunded o canceled
+    - ✅ 404
 - Race conditions:
     - ✅ confirm_payment_and_capture_from_preauth(): vista sopra
-    - runperiodic: visto sopra
+    - ✅ runperiodic: visto sopra
     - cancel_payment: visto sopra
 - Extra:
     - ✅ Test email
-    - Se il pagamento è in pending, pretix ci fa ritestare?
+    - ✅ Se il pagamento è in pending, pretix ci fa ritestare?
     - ✅ Se QuotaExceededException, va chiamato a mano payment.fail()?
 
 Debugging\

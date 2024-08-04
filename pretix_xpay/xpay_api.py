@@ -191,6 +191,7 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     return OrderStatus(transaction_code, result)
 
 def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
+    return
     try:
         if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED: # Manual detect for race conditions for skip the double confirm/refund
             logger.info(f'XPAY [{payment.full_id}]: Payment was already confirmed! Race condition detected.')
@@ -206,7 +207,6 @@ def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XP
     except Quota.QuotaExceededException as e:
         # Payment failed, cancel the preauthorized money
         logger.info(f"XPAY [{payment.full_id}]: Tried confirming payment, but quota was exceeded")
-        payment.fail(info={"error": str(_("Tried confirming payment, but quota was exceeded"))})
         refund_preauth(payment, provider)
 
         raise e
