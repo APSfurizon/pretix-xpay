@@ -82,6 +82,7 @@ class ReturnView(XPayOrderView, View):
         
     def _handle(self, data: dict):
         if self.kwargs.get("result") == "ko":
+            logger.error(f"XPAY_return_handle [{self.payment.full_id}]: payment failed gracefully.")
             self.payment.fail(info=dict(data.items()), log_data={"result": self.kwargs.get("result"), **dict(data.items())} )
             messages.error(self.request, _("The payment has failed. You can click below to try again."))
             return self._redirect_to_order()
@@ -89,6 +90,7 @@ class ReturnView(XPayOrderView, View):
         
         elif self.kwargs.get("result") == "ok":
             if not xpay.return_page_validate_digest(self.request, self.pprov):
+                logger.error(f"XPAY_return_handle [{self.payment.full_id}]: HMAC verification failed.")
                 messages.error(self.request, _("Sorry, we could not validate the payment result. Please try again or contact the event organizer to check if your payment was successful."))
                 return self._redirect_to_order()
             
@@ -96,8 +98,8 @@ class ReturnView(XPayOrderView, View):
                 # On success, return gracefully, otherwise throws a PaymentException
                 self.process_result(data, self.payment, self.pprov)
             except Quota.QuotaExceededException as e:
-                messages.error(self.request, _("The was an availability error while confirming your order! A refund has been issued."))
                 logger.error(f"XPAY_return_handle [{self.payment.full_id}]: A QuotaExceededException occurred: {repr(e)}")
+                messages.error(self.request, _("The was an availability error while confirming your order! A refund has been issued."))
             except PaymentException as e:
                 logger.error(f"XPAY_return_handle [{self.payment.full_id}]: A PaymentException occurred: {repr(e)}")
                 messages.error(self.request, _("The payment has failed. You can click below to try again. Details: %s") % repr(e))
@@ -109,6 +111,7 @@ class ReturnView(XPayOrderView, View):
         else:
             self.payment.fail(info=dict(data.items()), log_data={"result": self.kwargs.get("result"), **dict(data.items())} )
             messages.error(self.request, _("The payment has failed. You can click below to try again."))
+            logger.error(f"XPAY_return_handle [{self.payment.full_id}]: The payment has failed due to an unknown result.")
             return self._redirect_to_order()
 
     def _redirect_to_order(self):
