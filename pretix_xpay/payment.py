@@ -105,17 +105,18 @@ class XPayPaymentProvider(BasePaymentProvider):
     def test_mode_message(self):
         if self.event.testmode:
             return _(
-                f"The XPay plugin is operating in test mode. No money will actually be transferred, but BE SURE to check you're redirected to {TEST_URL}."
+                f"The XPay plugin is operating in test mode. No money will actually be transferred, but BE SURE to check you're redirected to {TEST_URL}. "
                 f"You can use credit card and configurations avaible at {DOCS_TEST_CARDS_URL} for testing."
             )
         return None
     
     def cancel_payment(self, payment: OrderPayment):
+        '''Overrides the default cancel_payment to add a couple of checks'''
         try:
             try:
                 order_status = xpay.get_order_status(payment=payment, provider=self)
             except Http404:
-                logger.error(f"XPAY_cancelPayment [{payment.full_id}]: Order not found")
+                logger.error(f"XPAY_cancel_payment [{payment.full_id}]: Order not found")
                 super().cancel_payment(payment)
                 raise Exception("Payment not found")
 
@@ -124,13 +125,13 @@ class XPayPaymentProvider(BasePaymentProvider):
                 super().cancel_payment(payment)
 
             elif order_status.status in XPAY_RESULT_RECORDED:
-                logger.info(f"XPAY_cancelPayment [{payment.full_id}]: Preauth payment was already settled!")
+                logger.info(f"XPAY_cancel_payment [{payment.full_id}]: Preauth payment was already settled!")
                 super().cancel_payment(payment)
                 send_refund_needed_email(payment, origin="XPayPaymentProvider.cancel_payment")
                 raise Exception("Preauth payment was already settled")
 
             elif order_status.status in XPAY_RESULT_REFUNDED or order_status.status in XPAY_RESULT_CANCELED:
-                logger.info(f"XPAY_cancelPayment [{payment.full_id}]: Payment was already in refunded or canceled state")
+                logger.info(f"XPAY_cancel_payment [{payment.full_id}]: Payment was already in refunded or canceled state")
                 super().cancel_payment(payment)
 
             else:
@@ -142,29 +143,34 @@ class XPayPaymentProvider(BasePaymentProvider):
 
         
     
-    def payment_form_render(self, request) -> str: # Should return an explainatory paragraph
+    def payment_form_render(self, request) -> str:
+        '''Renders an explainatory paragraph'''
         template = get_template("pretix_xpay/checkout_payment_form.html")
         ctx = {"request": request, "event": self.event, "settings": self.settings}
         return template.render(ctx)
     
-    def checkout_confirm_render(self, request) -> str: # (Mandatory to implement)
+    def checkout_confirm_render(self, request) -> str:
+        '''Renders the checkout confirm form'''
         template = get_template("pretix_xpay/checkout_payment_confirm.html")
         ctx = {"request": request, "event": self.event, "settings": self.settings, "provider": self}
         return template.render(ctx)
     
-    def payment_pending_render(self, request, payment) -> str: # Render customer-facing instructions on how to proceed with a pending payment
+    def payment_pending_render(self, request, payment) -> str:
+        '''Renders ustomer-facing instructions on how to proceed with a pending payment'''
         template = get_template("pretix_xpay/pending.html")
         payment_info = json.loads(payment.info) if payment.info else None
         ctx = {"request": request, "event": self.event, "settings": self.settings, "provider": self, "order": payment.order, "payment": payment, "payment_info": payment_info}
         return template.render(ctx)
 
-    def payment_control_render(self, request, payment) -> str: # It should return to admins HTML code containing information regarding the current payment status and, if applicable, next steps. NOT MANDATORY
+    def payment_control_render(self, request, payment) -> str:
+        '''Returns to admins the HTML code containing information regarding the current payment status and, if applicable, next steps. NOT MANDATORY'''
         template = get_template("pretix_xpay/control.html")
         payment_info = json.loads(payment.info) if payment.info else None
         ctx = {"request": request, "event": self.event, "settings": self.settings, "payment_info": payment_info, "payment": payment, "provider": self}
         return template.render(ctx)
 
     def shred_payment_info(self, obj: OrderPayment):
+       '''Shred payment info for enhanceh anonymization'''
        if not obj.info: return
        
        d = json.loads(obj.info)
@@ -180,8 +186,8 @@ class XPayPaymentProvider(BasePaymentProvider):
        obj.info = json.dumps(d)
        obj.save(update_fields=["info"])
 
-    
     def execute_payment(self, request: HttpRequest, payment: OrderPayment):
+        '''Will redirect user to the payment creation view'''
         return eventreverse(
             self.event,
             "plugins:pretix_xpay:redirect",
@@ -191,22 +197,20 @@ class XPayPaymentProvider(BasePaymentProvider):
                 "hash": payment.order.tagged_secret(HASH_TAG),
             },
         )
-    
-
 
     # Mandatory properties for the plugin to work
     @property
     def identifier(self):
         return "xpay"
-    
+
     def payment_refund_supported(self, payment: OrderPayment) -> bool:
         return False
 
     def payment_partial_refund_supported(self, payment: OrderPayment) -> bool:
         return False
-    
+
     def payment_prepare(self, request, payment):
         return self.checkout_prepare(request, None)
-    
+
     def payment_is_valid_session(self, request: HttpRequest):
         return True

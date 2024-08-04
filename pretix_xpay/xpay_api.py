@@ -101,12 +101,15 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         ], provider)
 
     if(result["esito"] == "KO"):
+        logger.error(f"XPAY_confirm_preauth [{payment.full_id}]: refund request failed gracefully.")
         raise PaymentException(_('Preauth confirm request failed with error code %d: %s. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
     elif(result["esito"] == "OK"):
         if(hmac != result["mac"]):
+            logger.error(f"XPAY_confirm_preauth [{payment.full_id}]: HMAC verification failed.")
             raise PaymentException(_('Unable to validate the preauth confirm. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
         pass # If the process is ok, we're done
     else:
+        logger.error(f"XPAY_confirm_preauth [{payment.full_id}]: Unknown result '{result["esito"]}'.")
         raise PaymentException(_('Unknown server response (%s) in the preauth confirm process. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % (result["esito"], f"{payment.order.code}-{transaction_code}"))
 
 
@@ -135,6 +138,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         result = post_api_call(provider, ENDPOINT_ORDERS_CANCEL, body)
     except Exception as e:
         send_refund_needed_email(payment, "xpay.refund_preauth-expPost")
+        logger.error(f"XPAY_refund_preauth [{payment.full_id}]: POST call failed: {repr(e)}")
         raise PaymentException(_("An error occurred with the XPay's servers while issuing a refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s. Exception: %s") % (f"{payment.order.code}-{transaction_code}", repr(e)))
 
     hmac = generate_mac([
@@ -144,14 +148,17 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         ], provider)
 
     if(result["esito"] == "KO"):
+        logger.error(f"XPAY_refund_preauth [{payment.full_id}]: refund request failed gracefully.")
         send_refund_needed_email(payment, "xpay.refund_preauth-ko")
         raise PaymentException(_('Preauth refund request failed with error code %d: %s. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
     elif(result["esito"] == "OK"):
         if(hmac != result["mac"]):
+            logger.error(f"XPAY_refund_preauth [{payment.full_id}]: HMAC verification failed.")
             send_refund_needed_email(payment, "xpay.refund_preauth-hmac")
             raise PaymentException(_('Unable to validate the preauth refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
         pass # If the process is ok, we're done
     else:
+        logger.error(f"XPAY_refund_preauth [{payment.full_id}]: Unknown result '{result["esito"]}'.")
         send_refund_needed_email(payment, "xpay.refund_preauth-unknown")
         raise PaymentException(_('Unknown server response (%s) in the preauth confirm process. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["esito"], f"{payment.order.code}-{transaction_code}"))
 
@@ -188,24 +195,29 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     if(hmac != result["mac"]):
         raise PaymentException(_('Unable to validate the order status for %s.') % transaction_code)
     
-    return OrderStatus(transaction_code, result)
+    try: 
+        to_return = OrderStatus(transaction_code, result)
+    except Exception as e:
+        logger.error(f"XPAY_get_order_status [{payment.full_id}]: Could not parse OrderStatus: {repr(e)}")
+        raise e
+    return to_return
 
 def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
     try:
         if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED: # Manual detect for race conditions for skip the double confirm/refund
-            logger.info(f'XPAY [{payment.full_id}]: Payment was already confirmed! Race condition detected.')
+            logger.info(f'XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Payment was already confirmed! Race condition detected.')
             return
         payment.confirm()
-        logger.info(f"XPAY [{payment.full_id}]: Payment confirmed!")
+        logger.info(f"XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Payment confirmed!")
         order.refresh_from_db()
 
         # Payment confirmed, take the preauthorized money
         confirm_preauth(payment, provider)
-        logger.info(f"XPAY [{payment.full_id}]: Successfully requested capture operation")
+        logger.info(f"XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Successfully requested capture operation.")
         
     except Quota.QuotaExceededException as e:
         # Payment failed, cancel the preauthorized money
-        logger.info(f"XPAY [{payment.full_id}]: Tried confirming payment, but quota was exceeded")
+        logger.info(f"XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Tried confirming payment, but quota was exceeded.")
         refund_preauth(payment, provider)
 
         raise e
@@ -219,5 +231,5 @@ def post_api_call(pp : XPayPaymentProvider, path: str, params: dict):
         r.raise_for_status()
         return r.json()
     except requests.RequestException:
-        logger.exception("Could not reach XPay's servers")
-        raise PaymentException(_("Could not reach payment provider"))
+        logger.exception("POST: Could not reach XPay's servers.")
+        raise PaymentException(_("Could not reach payment provider."))
