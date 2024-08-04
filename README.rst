@@ -73,15 +73,22 @@ Stuff to Test
     - ✅ Test accettazione print corretta in caso di esito non valido
     - ✅ process_result(): esito in pending
     - ✅ process_result(): esito in fail
-    - process_result(): esito non valido
+    - ✅ process_result(): esito non valido
     - ✅ confirm_payment_and_capture_from_preauth(): test race condition
     - ✅ confirm_payment_and_capture_from_preauth(): confirm_payment_and_capture_from_preauth
-    - confirm_payment_and_capture_from_preauth(): quota QuotaExceededException
-- Confirm/cancel preauth:
+    - ✅ confirm_payment_and_capture_from_preauth(): quota QuotaExceededException
+- Confirm preauth:
     - ✅ ok
-    - hmac invalid
-    - ko
-    - invalid
+    - ✅ hmac invalid
+    - ✅ ko
+    - ✅ invalid
+    - ✅ exception
+- Refund preauth:
+    - ✅ ok
+    - ✅ hmac invalid
+    - ✅ ko
+    - ✅ invalid
+    - ✅ exception
 - Runperiodic:
     - ✅ Payment in timeout
     - ✅ authorized: si testa sopra
@@ -96,12 +103,13 @@ Stuff to Test
     - recorded
     - refunded o canceled
 - Race conditions:
-    - confirm_payment_and_capture_from_preauth(): vista sopra
+    - ✅ confirm_payment_and_capture_from_preauth(): vista sopra
     - runperiodic: visto sopra
     - cancel_payment: visto sopra
 - Extra:
+    - ✅ Test email
     - Se il pagamento è in pending, pretix ci fa ritestare?
-    - Se QuotaExceededException, va chiamato a mano payment.fail()?
+    - ✅ Se QuotaExceededException, va chiamato a mano payment.fail()?
 
 Debugging\
 -----------------

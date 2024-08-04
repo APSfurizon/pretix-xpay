@@ -97,12 +97,11 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     hmac = generate_mac([
             ("esito", result["esito"]),
             ("idOperazione", result["idOperazione"]),
-            
             ("timeStamp", result["timeStamp"])
         ], provider)
 
     if(result["esito"] == "KO"):
-        raise PaymentException(_('Preauth confirm request failed with error code %s: %s. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
+        raise PaymentException(_('Preauth confirm request failed with error code %d: %s. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
     elif(result["esito"] == "OK"):
         if(hmac != result["mac"]):
             raise PaymentException(_('Unable to validate the preauth confirm. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
@@ -146,7 +145,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
 
     if(result["esito"] == "KO"):
         send_refund_needed_email(payment, "xpay.refund_preauth-ko")
-        raise PaymentException(_('Preauth refund request failed with error code %s: %s. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
+        raise PaymentException(_('Preauth refund request failed with error code %d: %s. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
     elif(result["esito"] == "OK"):
         if(hmac != result["mac"]):
             send_refund_needed_email(payment, "xpay.refund_preauth-hmac")
@@ -192,6 +191,9 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     return OrderStatus(transaction_code, result)
 
 def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
+    confirm_preauth(payment, provider)
+    return
+
     try:
         if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED: # Manual detect for race conditions for skip the double confirm/refund
             logger.info(f'XPAY [{payment.full_id}]: Payment was already confirmed! Race condition detected.')

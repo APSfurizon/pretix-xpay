@@ -138,3 +138,8 @@ class PollPendingView(View):
         from pretix_xpay.signals import poll_pending_payments
         poll_pending_payments(None)
         return HttpResponse("stocazzoooo", content_type="text/plain")
+#@method_decorator(xframe_options_exempt, "dispatch")
+#class ManualRefundView(View):
+#    def get(self, request: HttpRequest, *args, **kwargs):
+#        from pretix_xpay.utils import send_refund_needed_email
+#        return HttpResponse("stocazzoooo", content_type="text/plain")
