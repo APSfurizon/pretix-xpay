@@ -8,16 +8,14 @@ from django.utils.translation import gettext_lazy as _
 from django_scopes import scopes_disabled
 from pretix.base.models import OrderPayment, Order, Quota
 from pretix.base.settings import settings_hierarkey
-from pretix.base.settings import SettingsSandbox
 from pretix.base.signals import (
     logentry_display,
     periodic_task,
     register_payment_providers,
 )
-
 from pretix_xpay.payment import XPayPaymentProvider
 from pretix_xpay.constants import XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_RECORDED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
-from pretix_xpay.utils import send_refund_needed_email
+from pretix_xpay.utils import send_refund_needed_email, get_settings_object
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +33,7 @@ def pretixcontrol_logentry_display(sender, logentry, **kwargs):
 @scopes_disabled()
 def poll_pending_payments(sender, **kwargs):
     for payment in OrderPayment.objects.filter(provider="xpay", state__in=[OrderPayment.PAYMENT_STATE_PENDING, OrderPayment.PAYMENT_STATE_CREATED]):
-        settings = SettingsSandbox("payment", "xpay", payment.order.event)
+        settings = get_settings_object(payment.order.event)
         mins = int(settings.poll_pending_timeout) if settings.poll_pending_timeout else 60
 
         if payment.order.status != Order.STATUS_EXPIRED and payment.order.status != Order.STATUS_PENDING:

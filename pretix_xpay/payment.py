@@ -12,7 +12,7 @@ from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.base.settings import SettingsSandbox
 from pretix.multidomain.urlreverse import eventreverse
 from pretix_xpay.constants import TEST_URL, DOCS_TEST_CARDS_URL, HASH_TAG, XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_RECORDED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
-from pretix_xpay.utils import send_refund_needed_email
+from pretix_xpay.utils import send_refund_needed_email, get_settings_object
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class XPayPaymentProvider(BasePaymentProvider):
 
     def __init__(self, event: Event):
         super().__init__(event)
-        self.settings = SettingsSandbox("payment", "xpay", event)
+        self.settings = get_settings_object(event)
         self.event : Event = event
         
 
