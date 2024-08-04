@@ -60,12 +60,11 @@ class XPayOrderView:
         elif(get_params["esito"] in XPAY_STATUS_PENDING):
             logger.info(f"XPAY_return [{payment.full_id}]: Payment is now pending")
             self.payment.state = OrderPayment.PAYMENT_STATE_PENDING
-            self.payment.save()
+            self.payment.save(update_fields=["state"])
             return
         elif(get_params["esito"] in XPAY_STATUS_FAILS):
             logger.info(f"XPAY_return [{payment.full_id}]: Payment is now failed")
-            self.payment.state = OrderPayment.PAYMENT_STATE_FAILED
-            self.payment.save()
+            self.payment.fail()
             return
         else:
             raise PaymentException("Unrecognized state.")

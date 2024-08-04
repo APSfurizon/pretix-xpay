@@ -64,7 +64,7 @@ def poll_pending_payments(sender, **kwargs):
                 if(payment.state == OrderPayment.PAYMENT_STATE_CREATED):
                     logger.info(f"XPAY_periodic [{payment.full_id}]: Payment is now pending")
                     payment.state = OrderPayment.PAYMENT_STATE_PENDING
-                    payment.save()
+                    payment.save(update_fields=["state"])
 
             elif data.status in XPAY_RESULT_REFUNDED or data.status in XPAY_RESULT_CANCELED:
                 logger.info(f"XPAY_periodic [{payment.full_id}]: Canceling payment because found in a refounded or canceled status: {data.status}")

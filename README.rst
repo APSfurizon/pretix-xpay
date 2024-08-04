@@ -70,7 +70,7 @@ Stuff to Test
 -----------------
 - Pagamenti normali
     - ✅ Test accettazione print corretta in caso di esito ko
-    - Test accettazione print corretta in caso di esito non valido
+    - ✅ Test accettazione print corretta in caso di esito non valido
     - process_result(): esito in pending
     - process_result(): esito in fail
     - process_result(): esito non valido
