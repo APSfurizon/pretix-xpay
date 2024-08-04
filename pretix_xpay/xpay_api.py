@@ -191,22 +191,21 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     return OrderStatus(transaction_code, result)
 
 def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
-    return
     try:
         if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED: # Manual detect for race conditions for skip the double confirm/refund
-            logger.info(f'XPAY [{payment.full_id}]: Payment was already confirmed! Race condition detected.')
+            logger.info(f'XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Payment was already confirmed! Race condition detected.')
             return
         payment.confirm()
-        logger.info(f"XPAY [{payment.full_id}]: Payment confirmed!")
+        logger.info(f"XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Payment confirmed!")
         order.refresh_from_db()
 
         # Payment confirmed, take the preauthorized money
         confirm_preauth(payment, provider)
-        logger.info(f"XPAY [{payment.full_id}]: Successfully requested capture operation")
+        logger.info(f"XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Successfully requested capture operation.")
         
     except Quota.QuotaExceededException as e:
         # Payment failed, cancel the preauthorized money
-        logger.info(f"XPAY [{payment.full_id}]: Tried confirming payment, but quota was exceeded")
+        logger.info(f"XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Tried confirming payment, but quota was exceeded.")
         refund_preauth(payment, provider)
 
         raise e
@@ -220,5 +219,5 @@ def post_api_call(pp : XPayPaymentProvider, path: str, params: dict):
         r.raise_for_status()
         return r.json()
     except requests.RequestException:
-        logger.exception("Could not reach XPay's servers")
-        raise PaymentException(_("Could not reach payment provider"))
+        logger.exception("POST: Could not reach XPay's servers.")
+        raise PaymentException(_("Could not reach payment provider."))

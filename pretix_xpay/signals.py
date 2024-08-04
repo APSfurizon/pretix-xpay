@@ -50,33 +50,33 @@ def poll_pending_payments(sender, **kwargs):
             elif data.status in XPAY_RESULT_RECORDED:
                 try:
                     payment.confirm()
-                    logger.info(f"XPAY_periodic [{payment.full_id}]: Payment confirmed with status {data.status}")
+                    logger.info(f"XPAY_poll_pending_payments [{payment.full_id}]: Payment confirmed with status {data.status}")
                 except Quota.QuotaExceededException:
-                    logger.info(f"XPAY_periodic [{payment.full_id}]: Canceling payment quota was exceeded")
+                    logger.info(f"XPAY_poll_pending_payments [{payment.full_id}]: Canceling payment quota was exceeded")
                     send_refund_needed_email(payment, origin="periodic_task.poll_pending_payments")
 
             elif data.status in XPAY_RESULT_PENDING:
                 # If the payment it's still pending, weep waiting
                 if(payment.state == OrderPayment.PAYMENT_STATE_CREATED):
                     with transaction.atomic():
-                        logger.info(f"XPAY_periodic [{payment.full_id}]: Payment is now pending")
+                        logger.info(f"XPAY_poll_pending_payments [{payment.full_id}]: Payment is now pending")
                         payment.state = OrderPayment.PAYMENT_STATE_PENDING
                         payment.save(update_fields=["state"])
 
             elif data.status in XPAY_RESULT_REFUNDED or data.status in XPAY_RESULT_CANCELED:
-                logger.info(f"XPAY_periodic [{payment.full_id}]: Canceling payment because found in a refunded or canceled status: {data.status}")
+                logger.info(f"XPAY_poll_pending_payments [{payment.full_id}]: Canceling payment because found in a refunded or canceled status: {data.status}")
                 payment.fail(info={"error": str(_("Payment in refund or canceled state"))})
 
             else:
-                logger.exception(f"XPAY_periodic [{payment.full_id}]: Unrecognized payment status: {data.status}")
+                logger.exception(f"XPAY_poll_pending_payments [{payment.full_id}]: Unrecognized payment status: {data.status}")
 
         except Http404 as e:
             if payment.order.status == Order.STATUS_EXPIRED and payment.created < now() - timedelta(minutes=mins):
-                logger.exception(f"XPAY_periodic [{payment.full_id}]: Setting payment status to fail due to expired order and poll_pending_timeout reached")
+                logger.exception(f"XPAY_poll_pending_payments [{payment.full_id}]: Setting payment status to fail due to expired order and poll_pending_timeout reached")
                 payment.fail(log_data={"result": "poll_timeout"})
 
         except Exception as e:
-            logger.exception(f"XPAY_periodic [{payment.full_id}]: Exception in polling transaction status: {repr(e)}")
+            logger.exception(f"XPAY_poll_pending_payments [{payment.full_id}]: Exception in polling transaction status: {repr(e)}")
 
 settings_hierarkey.add_default("payment_xpay_hash", "sha1", str)
 settings_hierarkey.add_default("poll_pending_timeout", 60, int)

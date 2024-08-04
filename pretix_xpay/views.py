@@ -58,13 +58,13 @@ class XPayOrderView:
             if(get_params["esito"] in XPAY_STATUS_SUCCESS):
                 pass # go to fallback. Yes, spaghetti code :D
             elif(get_params["esito"] in XPAY_STATUS_PENDING):
-                logger.info(f"XPAY_return [{payment.full_id}]: Payment is now pending")
+                logger.info(f"XPAY_order_process_result [{payment.full_id}]: Payment is now pending")
                 messages.info(self.request, _("You payment is now pending. You will be notified either if the payment is confirmed or not."))
                 payment.state = OrderPayment.PAYMENT_STATE_PENDING
                 payment.save(update_fields=["state"])
                 return
             elif(get_params["esito"] in XPAY_STATUS_FAILS):
-                logger.info(f"XPAY_return [{payment.full_id}]: Payment is now failed")
+                logger.info(f"XPAY_order_process_result [{payment.full_id}]: Payment is now failed")
                 messages.error(self.request, _("The payment has failed. You can click below to try again."))
                 payment.fail(info={"error": str(_("Payment result is in a failed status"))})
                 return
@@ -97,8 +97,9 @@ class ReturnView(XPayOrderView, View):
                 self.process_result(data, self.payment, self.pprov)
             except Quota.QuotaExceededException as e:
                 messages.error(self.request, _("The was an availability error while confirming your order! A refund has been issued."))
+                logger.error(f"XPAY_return_handle [{self.payment.full_id}]: A QuotaExceededException occurred: {repr(e)}")
             except PaymentException as e:
-                logger.error(f"XPAY_return [{self.payment.full_id}]: A PaymentException occurred: {repr(e)}")
+                logger.error(f"XPAY_return_handle [{self.payment.full_id}]: A PaymentException occurred: {repr(e)}")
                 messages.error(self.request, _("The payment has failed. You can click below to try again. Details: %s") % repr(e))
                 if self.payment.state in PENDING_OR_CREATED_STATES:
                     self.payment.fail(log_data={"exception": str(e)})
