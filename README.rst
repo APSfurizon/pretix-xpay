@@ -109,8 +109,8 @@ Stuff to Test
     - ✅ runperiodic: visto sopra
     - cancel_payment: visto sopra
 - Extra endpoints protection:
-    - poll_pending_payments
-    - test_manual_refund_email
+    - ✅ poll_pending_payments
+    - ✅ test_manual_refund_email
 - Extra:
     - ✅ Test email
     - ✅ Se il pagamento è in pending, pretix ci fa ritestare?

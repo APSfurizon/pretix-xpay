@@ -26,9 +26,10 @@ def get_settings_object(event: Event) -> SettingsSandbox:
     return SettingsSandbox("payment", "xpay", event)
 
 def send_refund_needed_email(orderPayment: OrderPayment, origin: str = "-") -> None:
-    email = get_settings_object(orderPayment.order.event).payment_error_email
+    settings = get_settings_object(orderPayment.order.event)
+    email = settings.payment_error_email
     if email and len(email.strip()) > 0:
-        to = [k.strip() for k in orderPayment.order.settings.payment_error_email.split(",")]
+        to = [k.strip() for k in settings.payment_error_email.split(",")]
         subject = _('Severe error in XPAY payment process')
         body = LazyI18nString.from_gettext(_(
             'A severe error occurred while processing the OrderPayment {op_full_id} with transactionId {transaction_id}.\n'

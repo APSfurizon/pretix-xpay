@@ -143,8 +143,9 @@ class PollPendingView(View):
         from pretix_xpay.signals import poll_pending_payments
         event: Event = Event.objects.get(slug=kwargs.get("event"), organizer__slug=kwargs.get("organizer"))
         if event.testmode:
-            settings = get_settings_object(self.order.event)
+            settings = get_settings_object(event)
             if settings.enable_test_endpoints:
+                logger.info(f"poll_pending_payments called.")
                 poll_pending_payments(None)
                 return HttpResponse("ok", content_type="text/plain")
         return HttpResponse("nope", content_type="text/plain")
@@ -155,5 +156,7 @@ class ManualRefundEmailView(XPayOrderView, View):
         if self.order.event.testmode:
             settings = get_settings_object(self.order.event)
             if settings.enable_test_endpoints:
-                send_refund_needed_email(self.order, origin="Testing! :3")
-                return HttpResponse("nope", content_type="text/plain")
+                logger.info(f"test_manual_refund_email called with order: {self.order.code}")
+                send_refund_needed_email(self.payment, origin="Testing! :3")
+                return HttpResponse("ok", content_type="text/plain")
+        return HttpResponse("nope", content_type="text/plain")
