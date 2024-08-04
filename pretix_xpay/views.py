@@ -59,18 +59,20 @@ class XPayOrderView:
             pass # go to fallback. Yes, spaghetti code :D
         elif(get_params["esito"] in XPAY_STATUS_PENDING):
             logger.info(f"XPAY_return [{payment.full_id}]: Payment is now pending")
-            self.payment.state = OrderPayment.PAYMENT_STATE_PENDING
-            self.payment.save(update_fields=["state"])
+            messages.info(self.request, _("You payment is now pending. You will be notified either if the payment is confirmed or not."))
+            payment.state = OrderPayment.PAYMENT_STATE_PENDING
+            payment.save(update_fields=["state"])
             return
         elif(get_params["esito"] in XPAY_STATUS_FAILS):
             logger.info(f"XPAY_return [{payment.full_id}]: Payment is now failed")
-            self.payment.fail()
+            messages.error(self.request, _("The payment has failed. You can click below to try again."))
+            payment.fail()
             return
         else:
             raise PaymentException("Unrecognized state.")
 
         # Fallback if payment is success
-        xpay.confirm_payment_and_capture_from_preauth(self.payment, provider, self.order)
+        xpay.confirm_payment_and_capture_from_preauth(payment, provider, self.order)
     
 @method_decorator(csrf_exempt, name="dispatch")
 @method_decorator(xframe_options_exempt, "dispatch")
