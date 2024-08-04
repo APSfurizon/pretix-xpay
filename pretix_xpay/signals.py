@@ -66,7 +66,7 @@ def poll_pending_payments(sender, **kwargs):
 
             elif data.status in XPAY_RESULT_REFUNDED or data.status in XPAY_RESULT_CANCELED:
                 logger.info(f"XPAY_periodic [{payment.full_id}]: Canceling payment because found in a refounded or canceled status: {data.status}")
-                payment.fail(info=_("Payment in refund or canceled state"), log_data=data)
+                payment.fail(info=_("Payment in refund or canceled state"), log_data=data) #TODO: log_data=data gives exception
 
             else:
                 logger.exception(f"XPAY_periodic [{payment.full_id}]: Unrecognized payment status: {data.status}")

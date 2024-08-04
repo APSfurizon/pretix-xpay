@@ -7,7 +7,7 @@ from pretix.base.payment import PaymentException
 from pretix.multidomain.urlreverse import build_absolute_uri
 from pretix_xpay.payment import XPayPaymentProvider
 from pretix_xpay.utils import encode_order_id, generate_mac, build_order_desc, translate_language
-from pretix_xpay.utils import OrderStatus
+from pretix_xpay.utils import OrderStatus, send_refund_needed_email
 from pretix_xpay.constants import *
 from time import time
 
@@ -97,13 +97,15 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
             
             ("timeStamp", result["timeStamp"])
         ], provider)
-    if(hmac != result["mac"]):
-        raise PaymentException(_('Unable to validate the preauth confirm. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % transaction_code)
 
     if(result["esito"] == "ko"):
-        raise PaymentException(_('Preauth confirm request failed with error code %s: %s. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], transaction_code))
+        raise PaymentException(_('Preauth confirm request failed with error code %s: %s. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
     elif(result["esito"] == "ok"):
+        if(hmac != result["mac"]):
+            raise PaymentException(_('Unable to validate the preauth confirm. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
         pass # If the process is ok, we're done
+    else:
+        raise PaymentException(_('Unknown server response (%s) in the preauth confirm process. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % (result["esito"], f"{payment.order.code}-{transaction_code}"))
 
 
 def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
@@ -136,11 +138,16 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         ], provider)
 
     if(result["esito"] == "ko"):
-        raise PaymentException(_('Preauth refund request failed with error code %s: %s. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % result["errore"]["codice"], result["errore"]["messaggio"], transaction_code)
+        send_refund_needed_email(payment, "xpay.refund_preauth-ko")
+        raise PaymentException(_('Preauth refund request failed with error code %s: %s. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
     elif(result["esito"] == "ok"):
         if(hmac != result["mac"]):
-            raise PaymentException(_('Unable to validate the preauth refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % transaction_code)
+            send_refund_needed_email(payment, "xpay.refund_preauth-hmac")
+            raise PaymentException(_('Unable to validate the preauth refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
         pass # If the process is ok, we're done
+    else:
+        send_refund_needed_email(payment, "xpay.refund_preauth-unknown")
+        raise PaymentException(_('Unknown server response (%s) in the preauth confirm process. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["esito"], f"{payment.order.code}-{transaction_code}"))
 
 def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> OrderStatus:
     alias_key = provider.settings.alias_key
@@ -179,7 +186,7 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
 
 def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
     try:
-        if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED:
+        if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED: # Manual detect for race conditions for skip the double confirm/refund
             logger.info(f'XPAY [{payment.full_id}]: Payment was already confirmed! Race condition detected.')
             return
         payment.confirm()
@@ -194,7 +201,7 @@ def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XP
         # Payment failed, cancel the preauthorized money
         refund_preauth(payment, provider)
         logger.info(f"XPAY [{payment.full_id}]: Tried confirming payment, but quota was exceeded")
-        payment.fail(info="Tried confirming payment, but quota was exceeded") #TODO; Check if manual fail() call is needed
+        #payment.fail(info="Tried confirming payment, but quota was exceeded") #TODO; Check if manual fail() call is needed
 
         raise e
 

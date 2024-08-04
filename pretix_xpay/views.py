@@ -98,7 +98,7 @@ class ReturnView(XPayOrderView, View):
                 messages.error(self.request, _("The was an availability error while confirming your order! A refund has been issued."))
             except PaymentException as e:
                 logger.error(f"XPAY_return [{self.payment.full_id}]: A PaymentException occurred: {repr(e)}")
-                messages.error(self.request, _("The payment has failed. You can click below to try again."))
+                messages.error(self.request, _("The payment has failed. You can click below to try again. Details: %s") % repr(e))
                 if self.payment.state in PENDING_OR_CREATED_STATES:
                     self.payment.fail(log_data={"exception": str(e)})
 
