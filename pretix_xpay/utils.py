@@ -3,6 +3,7 @@ import logging
 from django.utils.translation import gettext_lazy as _
 from pretix.base.models import Order, Event, OrderPayment, OrderPosition
 from pretix.base.payment import BasePaymentProvider
+from pretix.base.settings import SettingsSandbox
 from datetime import datetime
 from pretix_xpay.constants import LANGUAGE_DEFAULT, LANGUAGES_TRANSLATION
 from i18nfield.strings import LazyI18nString
@@ -21,8 +22,12 @@ def generate_mac(data: list, provider: BasePaymentProvider) -> str:
     hash_algo.update(provider.settings.mac_secret_pass.encode("UTF-8"))
     return hash_algo.hexdigest()
 
+def get_settings_object(event: Event) -> SettingsSandbox:
+    return SettingsSandbox("payment", "xpay", event)
+
 def send_refund_needed_email(orderPayment: OrderPayment, origin: str = "-") -> None:
-    if orderPayment.order.settings.payment_error_email.strip():
+    email = get_settings_object(orderPayment.order.event).payment_error_email
+    if email and len(email.strip()) > 0:
         to = [k.strip() for k in orderPayment.order.settings.payment_error_email.split(",")]
         subject = _('Severe error in XPAY payment process')
         body = LazyI18nString.from_gettext(_(
