@@ -11,7 +11,7 @@ from pretix.base.models import Event, OrderPayment
 from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.base.settings import SettingsSandbox
 from pretix.multidomain.urlreverse import eventreverse
-from pretix_xpay.constants import TEST_URL, DOCS_TEST_CARDS_URL, HASH_TAG, XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_RECORDED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
+from pretix_xpay.constants import TEST_URL, DOCS_TEST_CARDS_URL, HASH_TAG, XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_CAPTURED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
 from pretix_xpay.utils import send_refund_needed_email, get_settings_object
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class XPayPaymentProvider(BasePaymentProvider):
                     label=_("Failed payments email address"),
                     help_text=_(
                         'Enter an email address recipient for manual verification requests.'
-                        'It might happen because of a failed refund request, or an already recorded payment.'
+                        'It might happen because of a failed refund request, or an already charged payment.'
                     ),
                 )
             ),
@@ -111,7 +111,12 @@ class XPayPaymentProvider(BasePaymentProvider):
         return None
     
     def cancel_payment(self, payment: OrderPayment):
-        '''Overrides the default cancel_payment to add a couple of checks'''
+        """
+        Overrides the default cancel_payment to add a couple of checks.
+
+        :param OrderPayment payment: the order's payment
+        :raises Exception: if the payment is not found or already accounted
+        """
         try:
             try:
                 order_status = xpay.get_order_status(payment=payment, provider=self)
@@ -124,11 +129,11 @@ class XPayPaymentProvider(BasePaymentProvider):
                 xpay.refund_preauth(payment, self)
                 super().cancel_payment(payment)
 
-            elif order_status.status in XPAY_RESULT_RECORDED:
-                logger.info(f"XPAY_cancel_payment [{payment.full_id}]: Preauth payment was already settled!")
+            elif order_status.status in XPAY_RESULT_CAPTURED:
+                logger.info(f"XPAY_cancel_payment [{payment.full_id}]: Preauthorized payment was already captured!")
                 super().cancel_payment(payment)
                 send_refund_needed_email(payment, origin="XPayPaymentProvider.cancel_payment")
-                raise Exception("Preauth payment was already settled")
+                raise Exception("Pre-authorized payment was already captured")
 
             elif order_status.status in XPAY_RESULT_REFUNDED or order_status.status in XPAY_RESULT_CANCELED:
                 logger.info(f"XPAY_cancel_payment [{payment.full_id}]: Payment was already in refunded or canceled state")

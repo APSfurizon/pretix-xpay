@@ -15,7 +15,7 @@ from pretix.base.signals import (
     register_payment_providers,
 )
 from pretix_xpay.payment import XPayPaymentProvider
-from pretix_xpay.constants import XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_RECORDED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
+from pretix_xpay.constants import XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_CAPTURED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
 from pretix_xpay.utils import send_refund_needed_email, get_settings_object
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def poll_pending_payments(sender, **kwargs):
             if data.status in XPAY_RESULT_AUTHORIZED:
                 xpay.confirm_payment_and_capture_from_preauth(payment, provider, payment.order)
 
-            elif data.status in XPAY_RESULT_RECORDED:
+            elif data.status in XPAY_RESULT_CAPTURED:
                 try:
                     payment.confirm()
                     logger.info(f"XPAY_poll_pending_payments [{payment.full_id}]: Payment confirmed with status {data.status}")

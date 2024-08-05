@@ -129,7 +129,7 @@ class RedirectView(XPayOrderView, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["url"] = xpay.initialize_payment_get_url(self.pprov)
-        ctx["params"] = xpay.initialize_payment_get_params(self.pprov, self.payment, kwargs["order"], kwargs["hash"], kwargs["payment"])
+        ctx["params"] = xpay.initialize_payment_get_params(self.payment, self.pprov, kwargs["order"], kwargs["hash"], kwargs["payment"])
         return ctx
     
 

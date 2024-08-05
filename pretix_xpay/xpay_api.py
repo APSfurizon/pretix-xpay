@@ -13,7 +13,17 @@ from time import time
 
 logger = logging.getLogger(__name__)
 
-def initialize_payment_get_params(provider: XPayPaymentProvider, payment: OrderPayment, order_code: str, order_salted_hash: str, payment_pk) -> dict:
+def initialize_payment_get_params(payment: OrderPayment, provider: XPayPaymentProvider, order_code: str, order_salted_hash: str, payment_pk) -> dict:
+    """
+    Initializes the payment creation parameters
+    
+    :param OrderPayment payment: The payment from which issue the order accounting
+    :param XPayPaymentProvider provider: The payment provider which holds the XPay logic
+    :param str order_code: the order's code
+    :param str order_salted_hash: the order's secure hash
+    :param int payment_pk: the payment's primary key
+    :rtype: dict
+    """
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
 
@@ -57,6 +67,9 @@ def initialize_payment_get_url(provider: XPayPaymentProvider) -> str:
     return get_xpay_api_url(provider) + ENDPOINT_ORDERS_CREATE
 
 def return_page_validate_digest(request: HttpRequest, provider: XPayPaymentProvider) -> bool:
+    """
+    Validates the HMAC hash after successfully paying for the order.
+    """
     hmac = generate_mac([
             ("codTrans", request.GET["codTrans"]),
             ("esito", request.GET["esito"]),
@@ -69,6 +82,14 @@ def return_page_validate_digest(request: HttpRequest, provider: XPayPaymentProvi
     return hmac == request.GET["mac"]
 
 def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
+    """
+    Creates the body for a POST request to issue a capture after preauthorization, launches it and analyzes the returned data.
+    
+    :param OrderPayment payment: The payment from which issue the capture
+    :param XPayPaymentProvider provider: The payment provider which holds the XPay logic
+    :rtype: None
+    :raises PaymentException: if the capture request returns its state to anything different than 'OK' or if the HMAC verification fails. 
+    """
     alias_key = provider.settings.alias_key
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
@@ -92,7 +113,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     try:
         result = post_api_call(provider, ENDPOINT_ORDERS_CONFIRM, body)
     except Exception as e:
-        raise PaymentException(_("An error occurred with the XPay's servers while settling the order. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s. Exception: %s") % (f"{payment.order.code}-{transaction_code}", repr(e)))
+        raise PaymentException(_("An error occurred with the XPay's servers while capturing the order. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s. Exception: %s") % (f"{payment.order.code}-{transaction_code}", repr(e)))
 
     hmac = generate_mac([
             ("esito", result["esito"]),
@@ -114,6 +135,14 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
 
 
 def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
+    """
+    Creates the body for a POST request to issue a refund, launches it and analyzes the returned data.
+    
+    :param OrderPayment payment: The payment from which issue a refund
+    :param XPayPaymentProvider provider: The payment provider which holds the XPay logic
+    :rtype: None
+    :raises PaymentException: if the refund request returns its state to anything different than 'OK' or if the HMAC verification fails. 
+    """
     alias_key = provider.settings.alias_key
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
@@ -163,6 +192,15 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         raise PaymentException(_('Unknown server response (%s) in the preauth confirm process. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["esito"], f"{payment.order.code}-{transaction_code}"))
 
 def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> OrderStatus:
+    """
+    Creates a body to requests an order's status, then launches the request and analyzes its response.
+    If the response status is valid, it will try parse the response to an OrderStatus object.
+
+    :param OrderPayment payment: The payment from which issue a refund
+    :param XPayPaymentProvider provider: The payment provider which holds the XPay logic
+    :rtype: OrderStatus
+    :raises ValueError: if the status request returns its state to anything different than 'OK', if the HMAC verification fails or if it fails parsing the response. 
+    """
     alias_key = provider.settings.alias_key
     transaction_code = encode_order_id(payment, provider.event)
     timestamp = int(time() * 1000)
@@ -183,9 +221,9 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     if(result["esito"] == "KO"):
         if result["errore"]["codice"] == 2:
             raise Http404("Order not found")
-        raise PaymentException(_('Unable to check the order status for %s. Error code: %d. Error message: "%s"') % (transaction_code, result["errore"]["codice"], result["errore"]["messaggio"]))
+        raise ValueError(_('Unable to check the order status for %s. Error code: %d. Error message: "%s"') % (transaction_code, result["errore"]["codice"], result["errore"]["messaggio"]))
     if(result["esito"] != "OK"):
-        raise PaymentException(_('Invalid parameter "esito" (%s) for %s.') % (result["esito"], transaction_code))
+        raise ValueError(_('Invalid parameter "esito" (%s) for %s.') % (result["esito"], transaction_code))
 
     hmac = generate_mac([
             ("esito", result["esito"]),
@@ -193,7 +231,7 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
             ("timeStamp", result["timeStamp"])
         ], provider)
     if(hmac != result["mac"]):
-        raise PaymentException(_('Unable to validate the order status for %s.') % transaction_code)
+        raise ValueError(_('Unable to validate the order status for %s.') % transaction_code)
     
     try: 
         to_return = OrderStatus(transaction_code, result)
@@ -222,12 +260,13 @@ def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XP
 
         raise e
 
-def get_xpay_api_url(pp: XPayPaymentProvider):
-    return TEST_URL if pp.event.testmode else PROD_URL
+def get_xpay_api_url(provider: XPayPaymentProvider):
+    return TEST_URL if provider.event.testmode else PROD_URL
 
-def post_api_call(pp : XPayPaymentProvider, path: str, params: dict):
+def post_api_call(provider : XPayPaymentProvider, path: str, params: dict):
+    '''Launches a POST request to XPay's servers'''
     try:
-        r = requests.post(f"{get_xpay_api_url(pp)}{path}", json=params, timeout=31.5) #timeout to slightly more than a multiplel of 3, since it is TCP retrasmission time
+        r = requests.post(f"{get_xpay_api_url(provider)}{path}", json=params, timeout=31.5) #timeout to slightly more than a multiple of 3, to account for TCP retrasmission time
         r.raise_for_status()
         return r.json()
     except requests.RequestException:
