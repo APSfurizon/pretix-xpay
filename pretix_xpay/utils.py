@@ -30,7 +30,7 @@ def send_refund_needed_email(orderPayment: OrderPayment, origin: str = "-") -> N
     email = settings.payment_error_email
     if email and len(email.strip()) > 0:
         to = [k.strip() for k in settings.payment_error_email.split(",")]
-        subject = _('Severe error in XPAY payment process')
+        subject = _("Severe error in XPay's payment process")
         body = LazyI18nString.from_gettext(_(
             'A severe error occurred while processing the OrderPayment {op_full_id} with transactionId {transaction_id}.\n'
             'The user has probably paid more than expected (due to a double payment or to a Quota Exceeded problem) and a manual refund is needed.\n\n'

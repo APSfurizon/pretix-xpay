@@ -67,12 +67,12 @@ class XPayPaymentProvider(BasePaymentProvider):
             (
                 "poll_pending_timeout",
                 forms.IntegerField(
-                    label=_("Poll pending timeout (mins)"),
+                    label=_("Pending order timeout (mins)"),
                     min_value = 1,
                     max_value = 50000000,
                     step_size = 1,
                     help_text=_(
-                        'Pending and newly created payment orders are refreshed with regular intervals, to check if the user have actually paid, but left the process of returning back to pretix\'s pages.'
+                        'Pending and newly created payment orders are refreshed with regular intervals, to check if the user have actually paid, but left the process of returning back to pretix\'s pages. '
                         'This timeout specifies in how much time the payment should be considered over and should be marked as expired.'
                     ),
                 ),
@@ -82,7 +82,7 @@ class XPayPaymentProvider(BasePaymentProvider):
                 forms.EmailField(
                     label=_("Failed payments email address"),
                     help_text=_(
-                        'Enter an email address recipient for manual verification requests.'
+                        'Enter an email address recipient for manual verification requests. '
                         'It might happen because of a failed refund request, or an already charged payment.'
                     ),
                 )
