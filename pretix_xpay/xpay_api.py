@@ -130,7 +130,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
             raise PaymentException(_('Unable to validate the preauth confirm. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
         pass # If the process is ok, we're done
     else:
-        logger.error(f"XPAY_confirm_preauth [{payment.full_id}]: Unknown result '{result["esito"]}'.")
+        logger.error(f'XPAY_confirm_preauth [{payment.full_id}]: Unknown result \'{result["esito"]}\'.')
         raise PaymentException(_('Unknown server response (%s) in the preauth confirm process. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % (result["esito"], f"{payment.order.code}-{transaction_code}"))
 
 
@@ -187,7 +187,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
             raise PaymentException(_('Unable to validate the preauth refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
         pass # If the process is ok, we're done
     else:
-        logger.error(f"XPAY_refund_preauth [{payment.full_id}]: Unknown result '{result["esito"]}'.")
+        logger.error(f'XPAY_refund_preauth [{payment.full_id}]: Unknown result \'{result["esito"]}\'.')
         send_refund_needed_email(payment, "xpay.refund_preauth-unknown")
         raise PaymentException(_('Unknown server response (%s) in the preauth confirm process. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["esito"], f"{payment.order.code}-{transaction_code}"))
 
