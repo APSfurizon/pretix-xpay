@@ -116,7 +116,7 @@ Stuff to Test
     - ✅ Se il pagamento è in pending, pretix ci fa ritestare?
     - ✅ Se QuotaExceededException, va chiamato a mano payment.fail()?
 
-Debugging\
+Debugging
 -----------------
 
 1. Run ``python setup.py develop``, which will install the plugin as a module, linking to the project's folder
