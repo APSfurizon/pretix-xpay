@@ -43,6 +43,7 @@ class XPayOrderView:
 
     # On success, return gracefully, otherwise throws a PaymentException
     def process_result(self, get_params: dict, payment: OrderPayment, provider: XPayPaymentProvider):
+        logger.info(f"XPAY_order_process_result [{payment.full_id}]: Processing result")
         with transaction.atomic():
             # Recover order payment
             payment = OrderPayment.objects.select_for_update().get(pk=payment.pk)
@@ -54,6 +55,7 @@ class XPayOrderView:
             payment.save(update_fields=["info"])
 
             if(get_params["esito"] in XPAY_STATUS_SUCCESS):
+                logger.info(f"XPAY_order_process_result [{payment.full_id}]: Payment is succeessful! Trying to confirm it")
                 pass # go to fallback. Yes, spaghetti code :D
             elif(get_params["esito"] in XPAY_STATUS_PENDING):
                 logger.info(f"XPAY_order_process_result [{payment.full_id}]: Payment is now pending")
@@ -62,15 +64,17 @@ class XPayOrderView:
                 payment.save(update_fields=["state"])
                 return
             elif(get_params["esito"] in XPAY_STATUS_FAILS):
-                logger.info(f"XPAY_order_process_result [{payment.full_id}]: Payment is now failed")
+                logger.warning(f"XPAY_order_process_result [{payment.full_id}]: Payment is now failed")
                 messages.error(self.request, _("The payment has failed. You can click below to try again."))
                 payment.fail(info={"error": str(_("Payment result is in a failed status"))})
                 return
             else:
+                logger.info(f"XPAY_order_process_result [{payment.full_id}]: Unrecognized state {get_params['ESITO']}")
                 raise PaymentException("Unrecognized state.")
 
         # Fallback if payment is success
         xpay.confirm_payment_and_capture_from_preauth(payment, provider, self.order)
+        logger.info(f"XPAY_order_process_result [{payment.full_id}]: Payment processed succesfully")
     
 @method_decorator(csrf_exempt, name="dispatch")
 @method_decorator(xframe_options_exempt, "dispatch")
@@ -79,6 +83,7 @@ class ReturnView(XPayOrderView, View):
         return self._handle(request.GET.dict())
         
     def _handle(self, data: dict):
+        logger.info(f"XPAY_return_handle [{self.payment.full_id}]: User has hit the return view")
         if self.kwargs.get("result") == "ko":
             logger.error(f"XPAY_return_handle [{self.payment.full_id}]: payment failed gracefully.")
             self.payment.fail(info=dict(data.items()), log_data={"result": self.kwargs.get("result"), **dict(data.items())} )
@@ -127,9 +132,12 @@ class RedirectView(XPayOrderView, TemplateView):
     template_name = "pretix_xpay/redirecting.html"
 
     def get_context_data(self, **kwargs):
+        logger.info(f"XPAY_RedirectView_get_context_data [{kwargs['order']}]: User has hit redirect view")
         ctx = super().get_context_data(**kwargs)
         ctx["url"] = xpay.initialize_payment_get_url(self.pprov)
         ctx["params"] = xpay.initialize_payment_get_params(self.payment, self.pprov, kwargs["order"], kwargs["hash"], kwargs["payment"])
+        logger.debug(f"XPAY_RedirectView_get_context_data [{kwargs['order']}]: url = {ctx['url']}")
+        logger.debug(f"XPAY_RedirectView_get_context_data [{kwargs['order']}]: params = {ctx['params']}")
         return ctx
     
 

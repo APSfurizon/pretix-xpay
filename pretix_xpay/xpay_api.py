@@ -90,6 +90,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     :rtype: None
     :raises PaymentException: if the capture request returns its state to anything different than 'OK' or if the HMAC verification fails. 
     """
+    logger.info(f"XPAY_confirm_preauth [{payment.full_id}]: Trying to capture preauth")
     alias_key = provider.settings.alias_key
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
@@ -113,6 +114,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     try:
         result = post_api_call(provider, ENDPOINT_ORDERS_CONFIRM, body)
     except Exception as e:
+        logger.error(f"XPAY_confirm_preauth [{payment.full_id}]: POST call failed: {repr(e)}")
         raise PaymentException(_("An error occurred with the XPay's servers while capturing the order. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s. Exception: %s") % (f"{payment.order.code}-{transaction_code}", repr(e)))
 
     hmac = generate_mac([
@@ -122,12 +124,13 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         ], provider)
 
     if(result["esito"] == "KO"):
-        logger.error(f"XPAY_confirm_preauth [{payment.full_id}]: refund request failed gracefully.")
+        logger.error(f"XPAY_confirm_preauth [{payment.full_id}]: confirm preauth request failed gracefully.")
         raise PaymentException(_('Preauth confirm request failed with error code %d: %s. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
     elif(result["esito"] == "OK"):
         if(hmac != result["mac"]):
             logger.error(f"XPAY_confirm_preauth [{payment.full_id}]: HMAC verification failed.")
             raise PaymentException(_('Unable to validate the preauth confirm. Contact the event organizer and check if your order is successfull and the correct amount of money has been trasferred from your account. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
+        logger.info(f"XPAY_confirm_preauth [{payment.full_id}]: Preauth captured succeesfully!")
         pass # If the process is ok, we're done
     else:
         logger.error(f'XPAY_confirm_preauth [{payment.full_id}]: Unknown result \'{result["esito"]}\'.')
@@ -143,6 +146,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     :rtype: None
     :raises PaymentException: if the refund request returns its state to anything different than 'OK' or if the HMAC verification fails. 
     """
+    logger.info(f"XPAY_refund_preauth [{payment.full_id}]: Trying to refund preauth")
     alias_key = provider.settings.alias_key
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
@@ -185,6 +189,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
             logger.error(f"XPAY_refund_preauth [{payment.full_id}]: HMAC verification failed.")
             send_refund_needed_email(payment, "xpay.refund_preauth-hmac")
             raise PaymentException(_('Unable to validate the preauth refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % f"{payment.order.code}-{transaction_code}")
+        logger.info(f"XPAY_refund_preauth [{payment.full_id}]: Preauth refunded successfully!")
         pass # If the process is ok, we're done
     else:
         logger.error(f'XPAY_refund_preauth [{payment.full_id}]: Unknown result \'{result["esito"]}\'.')
@@ -217,9 +222,12 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
         "timeStamp": timestamp,
         "mac": hmac
     }
-    result = post_api_call(provider, ENDPOINT_ORDERS_STATUS, body)
+    try:
+        result = post_api_call(provider, ENDPOINT_ORDERS_STATUS, body)
+    except Exception as e:
+        raise RuntimeError(_("XPay server error while checking the status for %s. Exception: %s") % (transaction_code, repr(e)))
     if(result["esito"] == "KO"):
-        if result["errore"]["codice"] == 2:
+        if result["errore"]["codice"] == 2: # https://ecommerce.nexi.it/specifiche-tecniche/tabelleecodifiche/codicierroreapirestful.html
             raise Http404("Order not found")
         raise ValueError(_('Unable to check the order status for %s. Error code: %d. Error message: "%s"') % (transaction_code, result["errore"]["codice"], result["errore"]["messaggio"]))
     if(result["esito"] != "OK"):
@@ -242,6 +250,13 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
 
 def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
     """
+    Tries to confirm a payment and if it success, it captures the relative preauth, otherwise if a QuotaExceededException is met, it refunds it
+
+    :param OrderPayment payment: The payment to confirm
+    :param XPayPaymentProvider provider: The payment provider which holds the XPay logic
+    :rtype: None
+    """
+    logger.info(f"XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Trying to confirm payment")
     try:
         if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED: # Manual detect for race conditions for skip the double confirm/refund
             logger.info(f'XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Payment was already confirmed! Race condition detected.')

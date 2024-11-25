@@ -116,6 +116,7 @@ class XPayPaymentProvider(BasePaymentProvider):
         :param OrderPayment payment: the order's payment
         :raises Exception: if the payment is not found or already accounted
         """
+        logger.info(f"XPAY_cancel_payment [{payment.full_id}]: Trying to cancel a payment")
         try:
             try:
                 order_status = xpay.get_order_status(payment=payment, provider=self)
@@ -125,20 +126,22 @@ class XPayPaymentProvider(BasePaymentProvider):
                 raise Exception("Payment not found")
 
             if order_status.status in XPAY_RESULT_AUTHORIZED or order_status.status in XPAY_RESULT_PENDING:
+                logger.error(f"XPAY_cancel_payment [{payment.full_id}]: Refunding preauth payment")
                 xpay.refund_preauth(payment, self)
                 super().cancel_payment(payment)
 
             elif order_status.status in XPAY_RESULT_CAPTURED:
-                logger.info(f"XPAY_cancel_payment [{payment.full_id}]: Preauthorized payment was already captured!")
+                logger.error(f"XPAY_cancel_payment [{payment.full_id}]: Preauthorized payment was already captured!")
                 super().cancel_payment(payment)
                 send_refund_needed_email(payment, origin="XPayPaymentProvider.cancel_payment")
                 raise Exception("Pre-authorized payment was already captured")
 
             elif order_status.status in XPAY_RESULT_REFUNDED or order_status.status in XPAY_RESULT_CANCELED:
-                logger.info(f"XPAY_cancel_payment [{payment.full_id}]: Payment was already in refunded or canceled state")
+                logger.error(f"XPAY_cancel_payment [{payment.full_id}]: Payment was already in refunded or canceled state")
                 super().cancel_payment(payment)
 
             else:
+                logger.error(f"XPAY_cancel_payment [{payment.full_id}]: Unknown state {order_status.status}. Cancling the payment anyway")
                 super().cancel_payment(payment)
                 raise Exception(f"Unknown state: {order_status.status}")
 
@@ -175,6 +178,7 @@ class XPayPaymentProvider(BasePaymentProvider):
 
     def shred_payment_info(self, obj: OrderPayment):
        '''Shred payment info for enhanceh anonymization'''
+       logger.info(f"XPAY_shred_payment_info [{obj.full_id}]: Shredding payment info")
        if not obj.info: return
        
        d = json.loads(obj.info)
@@ -192,6 +196,7 @@ class XPayPaymentProvider(BasePaymentProvider):
 
     def execute_payment(self, request: HttpRequest, payment: OrderPayment):
         '''Will redirect user to the payment creation view'''
+        logger.info(f"XPAY_execute_payment [{payment.full_id}]: Redirecting user to internal redirect page")
         return eventreverse(
             self.event,
             "plugins:pretix_xpay:redirect",

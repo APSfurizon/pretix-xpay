@@ -42,6 +42,7 @@ def send_refund_needed_email(orderPayment: OrderPayment, origin: str = "-") -> N
             "transaction_id": encode_order_id(orderPayment, orderPayment.order.event),
             "origin" : origin
         }
+        logger.info(f"XPAY_send_refund_needed_email [{orderPayment.full_id}]: Sending email with origin {origin}")
         mail(to, subject, body, ctx)
     
 def translate_language(order: Order) -> str:
@@ -73,29 +74,37 @@ class OrderOperation:
 
 class OrderStatus:
     def __init__(self, transaction_id: str, data: dict):
+        logger.info(f"XPAY_OrderStatus_init [{transaction_id}]: Parsing order status")
         self.operations = []
         # Throw if outside data is unparseable
         is_valid = data and isinstance(data, dict) and "esito" in data and data["esito"] == "OK"
         is_valid = is_valid and "report" in data and isinstance(data["report"], list)
         is_valid = is_valid and len(data["report"]) > 0 and isinstance(data["report"][0], dict)
-        if not is_valid: raise ValueError(_('Could not parse order %s') % transaction_id)
+        if not is_valid: 
+            logger.debug(f"XPAY_OrderStatus_init [{transaction_id}]: first is_valid check was false. DATA = {data}")
+            raise ValueError(_('Could not parse order %s') % transaction_id)
         report = data["report"][0]
 
         # If order is not created
         if report["stato"] in XPAY_RESULT_CANCELED:
             self.fallback_status = report["stato"]
+            logger.error(f"XPAY_OrderStatus_init [{transaction_id}]: Order was not created")
             return
 
         # Throw if report data is unparseable
         is_valid = is_valid and "codiceTransazione" in report and report["codiceTransazione"] == transaction_id
         is_valid = is_valid and "dettaglio" in report and isinstance(report["dettaglio"], list) and len(report["dettaglio"]) > 0
-        if not is_valid: raise ValueError(_('Could not parse order %s') % transaction_id)
+        if not is_valid: 
+            logger.debug(f"XPAY_OrderStatus_init [{transaction_id}]: second is_valid check was false. REPORT = {report}")
+            raise ValueError(_('Could not parse order %s') % transaction_id)
         self.transaction_id = report["codiceTransazione"]
 
         #Throw if detail is unparseable        
         details = report["dettaglio"][0]
         is_valid = is_valid and isinstance(details, dict) and "stato" in details
-        if not is_valid: raise ValueError(_('Could not parse order %s') % transaction_id)
+        if not is_valid: 
+            logger.debug(f"XPAY_OrderStatus_init [{transaction_id}]: third is_valid check was false. REPORT = {report}")
+            raise ValueError(_('Could not parse order %s') % transaction_id)
 
         self.fallback_status = details["stato"]
         if "operazioni" in details and isinstance(details["operazioni"], list):
