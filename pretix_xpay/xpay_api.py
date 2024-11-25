@@ -2,7 +2,7 @@ import logging
 import requests 
 from django.http import HttpRequest, Http404
 from django.utils.translation import gettext_lazy as _
-from pretix.base.models import OrderPayment, Order, Quota
+from pretix.base.models import OrderPayment, Order, Quota, OrderRefund
 from pretix.base.payment import PaymentException
 from pretix.multidomain.urlreverse import build_absolute_uri
 from pretix_xpay.payment import XPayPaymentProvider
@@ -136,9 +136,9 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
 
 def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     """
-    Creates the body for a POST request to issue a refund, launches it and analyzes the returned data.
+    Creates the body for a POST request to issue a refund of a preauthorized transaction, launches it and analyzes the returned data.
     
-    :param OrderPayment payment: The payment from which issue a refund
+    :param OrderPayment payment: The payment from which issue a preauth refund
     :param XPayPaymentProvider provider: The payment provider which holds the XPay logic
     :rtype: None
     :raises PaymentException: if the refund request returns its state to anything different than 'OK' or if the HMAC verification fails. 
@@ -168,7 +168,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     except Exception as e:
         send_refund_needed_email(payment, "xpay.refund_preauth-expPost")
         logger.error(f"XPAY_refund_preauth [{payment.full_id}]: POST call failed: {repr(e)}")
-        raise PaymentException(_("An error occurred with the XPay's servers while issuing a refund. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s. Exception: %s") % (f"{payment.order.code}-{transaction_code}", repr(e)))
+        raise PaymentException(_("An error occurred with the XPay's servers while issuing a refund of a preauth. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s. Exception: %s") % (f"{payment.order.code}-{transaction_code}", repr(e)))
 
     hmac = generate_mac([
             ("esito", result["esito"]),
@@ -177,7 +177,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         ], provider)
 
     if(result["esito"] == "KO"):
-        logger.error(f"XPAY_refund_preauth [{payment.full_id}]: refund request failed gracefully.")
+        logger.error(f"XPAY_refund_preauth [{payment.full_id}]: preauth refund request failed gracefully.")
         send_refund_needed_email(payment, "xpay.refund_preauth-ko")
         raise PaymentException(_('Preauth refund request failed with error code %d: %s. Contact the event organizer to execute the refund manually. Be sure to remember the transaction code #%s') % (result["errore"]["codice"], result["errore"]["messaggio"], f"{payment.order.code}-{transaction_code}"))
     elif(result["esito"] == "OK"):
@@ -241,6 +241,7 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     return to_return
 
 def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XPayPaymentProvider, order: Order):
+    """
     try:
         if payment.state == OrderPayment.PAYMENT_STATE_CONFIRMED: # Manual detect for race conditions for skip the double confirm/refund
             logger.info(f'XPAY_confirm_payment_and_capture_from_preauth [{payment.full_id}]: Payment was already confirmed! Race condition detected.')
@@ -259,6 +260,62 @@ def confirm_payment_and_capture_from_preauth(payment: OrderPayment, provider: XP
         refund_preauth(payment, provider)
 
         raise e
+    
+def refund(refund: OrderRefund, provider: XPayPaymentProvider): #Same endpoint of preauth refund, but slightly different logic
+    """
+    Creates the body for a POST request to issue a refund, launches it and analyzes the returned data.
+    
+    :param OrderPayment payment: The payment from which issue a refund
+    :param XPayPaymentProvider provider: The payment provider which holds the XPay logic
+    :rtype: None
+    :raises PaymentException: if the refund request returns its state to anything different than 'OK' or if the HMAC verification fails. 
+    """
+    logger.info(f"XPAY_refund [{refund.payment.full_id}@{refund.full_id}]: Trying to refund payment by {refund.amount}€")
+    alias_key = provider.settings.alias_key
+    transaction_code = encode_order_id(refund.payment, provider.event)
+    amount = int(refund.amount * 100)
+    timestamp = int(time() * 1000)
+
+    hmac = generate_mac([
+            ("apiKey", alias_key),
+            ("codiceTransazione", transaction_code),
+            ("divisa", "978"),
+            ("importo", amount),
+            ("timeStamp", timestamp)
+        ], provider)
+    
+    body = {
+        "apiKey": alias_key,
+        "codiceTransazione": transaction_code,
+        "importo": amount,
+        "divisa": "978",
+        "timeStamp": timestamp,
+        "mac": hmac
+    }
+
+    try:
+        result = post_api_call(provider, ENDPOINT_ORDERS_REFUND, body)
+    except Exception as e:
+        logger.error(f"XPAY_refund [{refund.payment.full_id}@{refund.full_id}]: POST call failed: {repr(e)}")
+        raise PaymentException(_("An error occurred with the XPay's servers while refunding the order. Contact the event organizer and check if your refund is successfull and the correct amount of money has been trasferred back to your account. Be sure to remember the transaction code #%s. Exception: %s") % (f"{refund.order.code}-{transaction_code}", repr(e)))
+    if(result["esito"] == "KO"):
+        logger.error(f"XPAY_refund [{refund.payment.full_id}@{refund.full_id}]: refund request failed gracefully.")
+        raise ValueError(_('Unable to refund payment %s. Error code: %d. Error message: "%s"') % (transaction_code, result["errore"]["codice"], result["errore"]["messaggio"]))
+    if(result["esito"] != "OK"):
+        logger.error(f'XPAY_refund [{refund.payment.full_id}@{refund.full_id}]: Unknown result \'{result["esito"]}\'.')
+        raise ValueError(_('Invalid parameter "esito" (%s) for %s.') % (result["esito"], transaction_code))
+
+    hmac = generate_mac([
+            ("esito", result["esito"]),
+            ("idOperazione", result["idOperazione"]),
+            ("timeStamp", result["timeStamp"])
+        ], provider)
+    if(hmac != result["mac"]):
+        logger.error(f"XPAY_refund [{refund.payment.full_id}@{refund.full_id}]: HMAC verification failed.")
+        raise ValueError(_('Unable to validate refund response for %s.') % transaction_code)
+    
+    logger.info(f"XPAY_refund [{refund.payment.full_id}@{refund.full_id}]: Refund of {refund.amount}€ was successfull!")
+
 
 def get_xpay_api_url(provider: XPayPaymentProvider):
     return TEST_URL if provider.event.testmode else PROD_URL

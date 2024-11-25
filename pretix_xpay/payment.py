@@ -7,9 +7,8 @@ from django.http import HttpRequest, Http404
 from django.template.loader import get_template
 from django.utils.translation import gettext_lazy as _
 from pretix.base.forms import SecretKeySettingsField
-from pretix.base.models import Event, OrderPayment
-from pretix.base.payment import BasePaymentProvider, PaymentException
-from pretix.base.settings import SettingsSandbox
+from pretix.base.models import Event, OrderPayment, OrderRefund
+from pretix.base.payment import BasePaymentProvider
 from pretix.multidomain.urlreverse import eventreverse
 from pretix_xpay.constants import TEST_URL, DOCS_TEST_CARDS_URL, HASH_TAG, XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_CAPTURED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
 from pretix_xpay.utils import send_refund_needed_email, get_settings_object
@@ -203,16 +202,22 @@ class XPayPaymentProvider(BasePaymentProvider):
             },
         )
 
+    def execute_refund(self, refund: OrderRefund):
+        '''Executes a partial or full refund request'''
+        xpay.refund(refund, self)
+        refund.save()
+        refund.done()
+
     # Mandatory properties for the plugin to work
     @property
     def identifier(self):
         return "xpay"
 
     def payment_refund_supported(self, payment: OrderPayment) -> bool:
-        return False
+        return True
 
     def payment_partial_refund_supported(self, payment: OrderPayment) -> bool:
-        return False
+        return True
 
     def payment_prepare(self, request, payment):
         return self.checkout_prepare(request, None)
