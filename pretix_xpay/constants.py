@@ -1,11 +1,11 @@
 TEST_URL = "https://int-ecommerce.nexi.it/ecomm/"
 PROD_URL = "https://ecommerce.nexi.it/ecomm/"
 
-ENDPOINT_ORDERS_CREATE = f"ecomm/DispatcherServlet"
-ENDPOINT_ORDERS_CONFIRM = f"api/bo/contabilizza"
-ENDPOINT_ORDERS_CANCEL = f"api/bo/storna"
-ENDPOINT_ORDERS_REFUND = f"api/bo/storna"
-ENDPOINT_ORDERS_STATUS = f"api/bo/situazioneOrdine"
+ENDPOINT_ORDERS_CREATE = "ecomm/DispatcherServlet"
+ENDPOINT_ORDERS_CONFIRM = "api/bo/contabilizza"
+ENDPOINT_ORDERS_CANCEL = "api/bo/storna"
+ENDPOINT_ORDERS_REFUND = "api/bo/storna"
+ENDPOINT_ORDERS_STATUS = "api/bo/situazioneOrdine"
 
 DOCS_TEST_CARDS_URL = "https://ecommerce.nexi.it/area-test"
 
@@ -19,7 +19,8 @@ XPAY_RESULT_AUTHORIZED = ["Autorizzato"]
 XPAY_RESULT_CAPTURED = ["Contabilizzato", "In attesa di contab.", "Contabilizzato Parz."]
 XPAY_RESULT_PENDING = ["In Corso", "Pendente"]
 XPAY_RESULT_REFUNDED = ["Rimborsato", "Rimborsato Parz.", "In attesa di storno", "Stornato"]
-XPAY_RESULT_CANCELED = ["Autor. Negata", "Non Creato", "Negato", "Annullato", "Autor. Negata", "Non valido", "Non generato", "Chiuso da backoffice", "Annullato", "Sospeso", "Storno Negato", "Storno Annullato"]
+XPAY_RESULT_CANCELED = ["Autor. Negata", "Non Creato", "Negato", "Annullato", "Autor. Negata", "Non valido", "Non generato",
+                        "Chiuso da backoffice", "Annullato", "Sospeso", "Storno Negato", "Storno Annullato"]
 
 XPAY_OPERATION_CAPTURE = "CONTAB."
 XPAY_OPERATION_REFUND = "STORNO"

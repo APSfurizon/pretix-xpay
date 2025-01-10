@@ -1,17 +1,27 @@
 import json
 import logging
-import pretix_xpay.xpay_api as xpay
 from collections import OrderedDict
 from django import forms
-from django.http import HttpRequest, Http404
+from django.http import Http404, HttpRequest
 from django.template.loader import get_template
 from django.utils.translation import gettext_lazy as _
 from pretix.base.forms import SecretKeySettingsField
 from pretix.base.models import Event, OrderPayment, OrderRefund
 from pretix.base.payment import BasePaymentProvider
 from pretix.multidomain.urlreverse import eventreverse
-from pretix_xpay.constants import TEST_URL, DOCS_TEST_CARDS_URL, HASH_TAG, XPAY_RESULT_AUTHORIZED, XPAY_RESULT_PENDING, XPAY_RESULT_CAPTURED, XPAY_RESULT_REFUNDED, XPAY_RESULT_CANCELED
-from pretix_xpay.utils import send_refund_needed_email, get_settings_object
+
+import pretix_xpay.xpay_api as xpay
+from pretix_xpay.constants import (
+    DOCS_TEST_CARDS_URL,
+    HASH_TAG,
+    TEST_URL,
+    XPAY_RESULT_AUTHORIZED,
+    XPAY_RESULT_CANCELED,
+    XPAY_RESULT_CAPTURED,
+    XPAY_RESULT_PENDING,
+    XPAY_RESULT_REFUNDED,
+)
+from pretix_xpay.utils import get_settings_object, send_refund_needed_email
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +36,13 @@ class XPayPaymentProvider(BasePaymentProvider):
     def __init__(self, event: Event):
         super().__init__(event)
         self.settings = get_settings_object(event)
-        self.event : Event = event
-        
+        self.event: Event = event
 
     @property
     def settings_form_fields(self):
         fields = [
             (
-                "alias_key", # Will be used to identify the merchant during api calls
+                "alias_key",  # Will be used to identify the merchant during api calls
                 forms.CharField(
                     label=_("XPay's Alias key"),
                     help_text=_(
@@ -67,17 +76,18 @@ class XPayPaymentProvider(BasePaymentProvider):
                 "poll_pending_timeout",
                 forms.IntegerField(
                     label=_("Pending order timeout (mins)"),
-                    min_value = 1,
-                    max_value = 50000000,
-                    step_size = 1,
+                    min_value=1,
+                    max_value=50000000,
+                    step_size=1,
                     help_text=_(
-                        'Pending and newly created payment orders are refreshed with regular intervals, to check if the user have actually paid, but left the process of returning back to pretix\'s pages. '
+                        'Pending and newly created payment orders are refreshed with regular intervals, '
+                        'to check if the user have actually paid, but left the process of returning back to pretix\'s pages. '
                         'This timeout specifies in how much time the payment should be considered over and should be marked as expired.'
                     ),
                 ),
             ),
             (
-                "payment_error_email", # Email address to send manual refund requests to
+                "payment_error_email",  # Email address to send manual refund requests to
                 forms.EmailField(
                     label=_("Failed payments email address"),
                     help_text=_(
@@ -99,7 +109,7 @@ class XPayPaymentProvider(BasePaymentProvider):
         d = OrderedDict(fields)
         d.move_to_end("_enabled", last=False)
         return d
-    
+
     @property
     def test_mode_message(self):
         if self.event.testmode:
@@ -108,7 +118,7 @@ class XPayPaymentProvider(BasePaymentProvider):
                 f"You can use credit card and configurations avaible at {DOCS_TEST_CARDS_URL} for testing."
             )
         return None
-    
+
     def cancel_payment(self, payment: OrderPayment):
         """
         Overrides the default cancel_payment to add a couple of checks.
@@ -148,25 +158,24 @@ class XPayPaymentProvider(BasePaymentProvider):
         except BaseException as e:
             logger.warning(f"A warning occurred while trying to cancel the payment {payment.full_id}: {repr(e)}")
 
-        
-    
     def payment_form_render(self, request) -> str:
         '''Renders an explainatory paragraph'''
         template = get_template("pretix_xpay/checkout_payment_form.html")
         ctx = {"request": request, "event": self.event, "settings": self.settings}
         return template.render(ctx)
-    
+
     def checkout_confirm_render(self, request) -> str:
         '''Renders the checkout confirm form'''
         template = get_template("pretix_xpay/checkout_payment_confirm.html")
         ctx = {"request": request, "event": self.event, "settings": self.settings, "provider": self}
         return template.render(ctx)
-    
+
     def payment_pending_render(self, request, payment) -> str:
         '''Renders ustomer-facing instructions on how to proceed with a pending payment'''
         template = get_template("pretix_xpay/pending.html")
         payment_info = json.loads(payment.info) if payment.info else None
-        ctx = {"request": request, "event": self.event, "settings": self.settings, "provider": self, "order": payment.order, "payment": payment, "payment_info": payment_info}
+        ctx = {"request": request, "event": self.event, "settings": self.settings, "provider": self,
+               "order": payment.order, "payment": payment, "payment_info": payment_info}
         return template.render(ctx)
 
     def payment_control_render(self, request, payment) -> str:
@@ -177,22 +186,30 @@ class XPayPaymentProvider(BasePaymentProvider):
         return template.render(ctx)
 
     def shred_payment_info(self, obj: OrderPayment):
-       '''Shred payment info for enhanceh anonymization'''
-       logger.info(f"XPAY_shred_payment_info [{obj.full_id}]: Shredding payment info")
-       if not obj.info: return
-       
-       d = json.loads(obj.info)
-       if "cognome" in d: d["cognome"] = "█"
-       if "mail" in d: d["mail"] = "█"
-       if "nome" in d: d["nome"] = "█"
-       if "pan" in d: d["pan"] = "█"
-       if "regione" in d: d["regione"] = "█"
-       if "scadenza_pan" in d: d["scadenza_pan"] = "█"
-       if "tipoProdotto" in d: d["tipoProdotto"] = "█"
+        '''Shred payment info for enhanceh anonymization'''
+        logger.info(f"XPAY_shred_payment_info [{obj.full_id}]: Shredding payment info")
+        if not obj.info:
+            return
 
-       d["_shredded"] = True
-       obj.info = json.dumps(d)
-       obj.save(update_fields=["info"])
+        d = json.loads(obj.info)
+        if "cognome" in d:
+            d["cognome"] = "█"
+        if "mail" in d:
+            d["mail"] = "█"
+        if "nome" in d:
+            d["nome"] = "█"
+        if "pan" in d:
+            d["pan"] = "█"
+        if "regione" in d:
+            d["regione"] = "█"
+        if "scadenza_pan" in d:
+            d["scadenza_pan"] = "█"
+        if "tipoProdotto" in d:
+            d["tipoProdotto"] = "█"
+
+        d["_shredded"] = True
+        obj.info = json.dumps(d)
+        obj.save(update_fields=["info"])
 
     def execute_payment(self, request: HttpRequest, payment: OrderPayment):
         '''Will redirect user to the payment creation view'''
@@ -214,9 +231,9 @@ class XPayPaymentProvider(BasePaymentProvider):
         refund.done()
 
     # Mandatory properties for the plugin to work
-    @property
-    def identifier(self):
-        return "xpay"
+    # @property
+    # def identifier(self):
+    #    return "xpay"
 
     def payment_refund_supported(self, payment: OrderPayment) -> bool:
         return True
