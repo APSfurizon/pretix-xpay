@@ -13,8 +13,6 @@ from pretix_xpay.constants import (
     ENDPOINT_ORDERS_CREATE,
     ENDPOINT_ORDERS_REFUND,
     ENDPOINT_ORDERS_STATUS,
-    PROD_URL,
-    TEST_URL,
 )
 from pretix_xpay.payment import XPayPaymentProvider
 from pretix_xpay.utils import (
@@ -22,6 +20,8 @@ from pretix_xpay.utils import (
     build_order_desc,
     encode_order_id,
     generate_mac,
+    get_alias_key,
+    get_xpay_api_url,
     send_refund_needed_email,
     translate_language,
 )
@@ -44,7 +44,7 @@ def initialize_payment_get_params(payment: OrderPayment, provider: XPayPaymentPr
     amount = int(payment.amount * 100)
 
     return {
-        "alias": provider.settings.alias_key,
+        "alias": get_alias_key(provider),
         "importo": amount,
         "divisa": "EUR",
         "codTrans": transaction_code,
@@ -110,7 +110,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     :raises PaymentException: if the capture request returns its state to anything different than 'OK' or if the HMAC verification fails.
     """
     logger.info(f"XPAY_confirm_preauth [{payment.full_id}]: Trying to capture preauth")
-    alias_key = provider.settings.alias_key
+    alias_key = get_alias_key(provider)
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
     timestamp = int(time() * 1000)
@@ -179,7 +179,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     :raises PaymentException: if the refund request returns its state to anything different than 'OK' or if the HMAC verification fails.
     """
     logger.info(f"XPAY_refund_preauth [{payment.full_id}]: Trying to refund preauth")
-    alias_key = provider.settings.alias_key
+    alias_key = get_alias_key(provider)
     transaction_code = encode_order_id(payment, provider.event)
     amount = int(payment.amount * 100)
     timestamp = int(time() * 1000)
@@ -245,7 +245,7 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     :rtype: OrderStatus
     :raises ValueError: if the status request has its state to anything different than 'OK', if the HMAC verification fails or if it fails parsing the response.
     """
-    alias_key = provider.settings.alias_key
+    alias_key = get_alias_key(provider)
     transaction_code = encode_order_id(payment, provider.event)
     timestamp = int(time() * 1000)
 
@@ -328,7 +328,7 @@ def refund(refund: OrderRefund, provider: XPayPaymentProvider):  # Same endpoint
     :raises PaymentException: if the refund request returns its state to anything different than 'OK' or if the HMAC verification fails.
     """
     logger.info(f"XPAY_refund [{refund.payment.full_id}@{refund.full_id}]: Trying to refund payment by {refund.amount}€")
-    alias_key = provider.settings.alias_key
+    alias_key = get_alias_key(provider)
     transaction_code = encode_order_id(refund.payment, provider.event)
     amount = int(refund.amount * 100)
     timestamp = int(time() * 1000)
@@ -376,10 +376,6 @@ def refund(refund: OrderRefund, provider: XPayPaymentProvider):  # Same endpoint
         raise ValueError(_('Unable to validate refund response for %s.') % transaction_code)
 
     logger.info(f"XPAY_refund [{refund.payment.full_id}@{refund.full_id}]: Refund of {refund.amount}€ was successfull!")
-
-
-def get_xpay_api_url(provider: XPayPaymentProvider):
-    return TEST_URL if provider.event.testmode else PROD_URL
 
 
 def post_api_call(provider: XPayPaymentProvider, path: str, params: dict):

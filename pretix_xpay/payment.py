@@ -48,6 +48,7 @@ class XPayPaymentProvider(BasePaymentProvider):
                     help_text=_(
                         'Check your backoffice area to recover the Alias value.'
                     ),
+                    required=True
                 )
             ),
             (
@@ -61,7 +62,7 @@ class XPayPaymentProvider(BasePaymentProvider):
                     help_text=_(
                         'By default it is set to SHA-1, contact XPay\'s support in order to use SHA-256.'
                     ),
-                ),
+                )
             ),
             (
                 "mac_secret_pass",
@@ -70,6 +71,31 @@ class XPayPaymentProvider(BasePaymentProvider):
                     help_text=_(
                         'Check your backoffice area to recover the mac secret value. It is used to secure the hash'
                     ),
+                    required=True
+                ),
+            ),
+            (
+                "test_alias_key",  # Will be used to identify the merchant during api calls
+                forms.CharField(
+                    label=_("TEST - XPay's Alias key"),
+                    help_text=_(
+                        'Check your backoffice area to recover the Alias value. '
+                        'This is used ONLY when the event is in test mode. '
+                        'If not set, it will fallback to the default Alias key.'
+                    ),
+                    required=False
+                )
+            ),
+            (
+                "test_mac_secret_pass",
+                forms.CharField(
+                    label=_("TEST - Mac Secret"),
+                    help_text=_(
+                        'Check your backoffice area to recover the mac secret value. It is used to secure the hash'
+                        'This is used ONLY when the event is in test mode. '
+                        'If not set, it will fallback to the default Mac secret.'
+                    ),
+                    required=False
                 ),
             ),
             (

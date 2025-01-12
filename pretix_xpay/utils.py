@@ -11,10 +11,36 @@ from pretix.base.settings import SettingsSandbox
 from pretix_xpay.constants import (
     LANGUAGE_DEFAULT,
     LANGUAGES_TRANSLATION,
+    PROD_URL,
+    TEST_URL,
     XPAY_RESULT_CANCELED,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def get_xpay_api_url(provider: BasePaymentProvider):
+    return TEST_URL if provider.event.testmode else PROD_URL
+
+
+def get_alias_key(provider: BasePaymentProvider) -> str:
+    if provider.event.testmode:
+        key = provider.settings.test_alias_key
+        if not key:
+            key = provider.settings.alias_key
+        return key
+    else:
+        return provider.settings.alias_key
+
+
+def get_mac_secret_pass(provider: BasePaymentProvider) -> str:
+    if provider.event.testmode:
+        key = provider.settings.test_mac_secret_pass
+        if not key:
+            key = provider.settings.mac_secret_pass
+        return key
+    else:
+        return provider.settings.mac_secret_pass
 
 
 def encode_order_id(orderPayment: OrderPayment, event: Event) -> str:
@@ -26,7 +52,7 @@ def generate_mac(data: list, provider: BasePaymentProvider) -> str:
     hash_algo = hashlib.new(provider.settings.hash)
     for el in data:
         hash_algo.update(f"{el[0]}={str(el[1])}".encode("UTF-8"))
-    hash_algo.update(provider.settings.mac_secret_pass.encode("UTF-8"))
+    hash_algo.update(get_mac_secret_pass(provider).encode("UTF-8"))
     return hash_algo.hexdigest()
 
 

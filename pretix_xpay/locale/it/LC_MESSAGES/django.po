@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-10 16:11+0100\n"
+"POT-Creation-Date: 2025-01-12 20:09+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Furizon Team\n"
 "Language-Team: \n"
@@ -32,11 +32,11 @@ msgstr "Chiave Alias XPay"
 msgid "Check your backoffice area to recover the Alias value."
 msgstr "Recupera da backoffice il tuo Alias."
 
-#: pretix_xpay/payment.py:56
+#: pretix_xpay/payment.py:57
 msgid "Mac's hash algorithm"
 msgstr "Algoritmo di hashing Mac"
 
-#: pretix_xpay/payment.py:62
+#: pretix_xpay/payment.py:63
 msgid ""
 "By default it is set to SHA-1, contact XPay's support in order to use "
 "SHA-256."
@@ -44,11 +44,11 @@ msgstr ""
 "Impostato a SHA-1 come predefinito, contatta il supporto di XPay per "
 "cambiare l'algoritmo a SHA-256."
 
-#: pretix_xpay/payment.py:69
+#: pretix_xpay/payment.py:70
 msgid "Mac Secret"
 msgstr "Chiave MAC"
 
-#: pretix_xpay/payment.py:71
+#: pretix_xpay/payment.py:72
 msgid ""
 "Check your backoffice area to recover the mac secret value. It is used to "
 "secure the hash"
@@ -56,11 +56,43 @@ msgstr ""
 "Recupera il valore dalla tua area di backoffice. Viene utilizzato per "
 "convalidare i codici hash"
 
-#: pretix_xpay/payment.py:78
+#: pretix_xpay/payment.py:80
+#, fuzzy
+#| msgid "XPay's Alias key"
+msgid "TEST - XPay's Alias key"
+msgstr "Chiave Alias XPay"
+
+#: pretix_xpay/payment.py:82
+msgid ""
+"Check your backoffice area to recover the Alias value. This is used ONLY "
+"when the event is in test mode. If not set, it will fallback to the default "
+"Alias key."
+msgstr ""
+
+#: pretix_xpay/payment.py:92
+#, fuzzy
+#| msgid "Mac Secret"
+msgid "TEST - Mac Secret"
+msgstr "Chiave MAC"
+
+#: pretix_xpay/payment.py:94
+#, fuzzy
+#| msgid ""
+#| "Check your backoffice area to recover the mac secret value. It is used to "
+#| "secure the hash"
+msgid ""
+"Check your backoffice area to recover the mac secret value. It is used to "
+"secure the hashThis is used ONLY when the event is in test mode. If not set, "
+"it will fallback to the default Mac secret."
+msgstr ""
+"Recupera il valore dalla tua area di backoffice. Viene utilizzato per "
+"convalidare i codici hash"
+
+#: pretix_xpay/payment.py:104
 msgid "Pending order timeout (mins)"
 msgstr "Timeout scadenza ordini in attesa (minuti)"
 
-#: pretix_xpay/payment.py:83
+#: pretix_xpay/payment.py:109
 msgid ""
 "Pending and newly created payment orders are refreshed with regular "
 "intervals, to check if the user have actually paid, but left the process of "
@@ -72,11 +104,11 @@ msgstr ""
 "alla pagina di esito di Pretix. Questo timeout specifica in quanto tempo "
 "questi pagamenti dovrebbero essere considerati scaduti."
 
-#: pretix_xpay/payment.py:92
+#: pretix_xpay/payment.py:118
 msgid "Failed payments email address"
 msgstr "Indirizzi email per notifica pagamenti falliti"
 
-#: pretix_xpay/payment.py:94
+#: pretix_xpay/payment.py:120
 msgid ""
 "Enter an email address recipient for manual verification requests. It might "
 "happen because of a failed refund request, or an already charged payment."
@@ -85,11 +117,11 @@ msgstr ""
 "manuale. Potrebbe accadere per via di un'errore durante le richieste di "
 "rimborso automatiche, o per un pagamento contabilizzato da rimborsare."
 
-#: pretix_xpay/payment.py:102
+#: pretix_xpay/payment.py:128
 msgid "Enable test endpoints"
 msgstr "Abilita endpoint di test"
 
-#: pretix_xpay/payment.py:104
+#: pretix_xpay/payment.py:130
 msgid ""
 "This enables the endpoints /poll_pending_payments and /"
 "test_manual_refund_email for events in testmode"
@@ -97,7 +129,7 @@ msgstr ""
 "Abilita gli endpoint /poll_pending_payments e /test_manual_refund_email per "
 "gli eventi in modalità di test"
 
-#: pretix_xpay/payment.py:117
+#: pretix_xpay/payment.py:144
 #, python-brace-format
 msgid ""
 "The XPay plugin is operating in test mode. No money will actually be "
@@ -188,11 +220,11 @@ msgstr "Abilitare JavaScript per continuare."
 msgid "Continue"
 msgstr "Continua"
 
-#: pretix_xpay/utils.py:42
+#: pretix_xpay/utils.py:68
 msgid "Severe error in XPay's payment process"
 msgstr "Errore grave nella fase di pagamento XPay"
 
-#: pretix_xpay/utils.py:44
+#: pretix_xpay/utils.py:70
 #, python-brace-format
 msgid ""
 "A severe error occurred while processing the OrderPayment {op_full_id} with "
@@ -222,11 +254,11 @@ msgstr ""
 "Per maggiori informazioni, contattaci su https://github.com/APSfurizon/"
 "pretix-xpay/"
 
-#: pretix_xpay/utils.py:84
+#: pretix_xpay/utils.py:110
 msgid "Could not parse operation."
 msgstr "Non è stato possibile elaborare un'operazione."
 
-#: pretix_xpay/utils.py:101 pretix_xpay/utils.py:115 pretix_xpay/utils.py:123
+#: pretix_xpay/utils.py:127 pretix_xpay/utils.py:141 pretix_xpay/utils.py:149
 #, python-format
 msgid "Could not parse order %s"
 msgstr "Impossibile elaborare l'ordine %s"
@@ -425,6 +457,6 @@ msgstr ""
 msgid "Unable to validate refund response for %s."
 msgstr "Impossibile verificare lo stato dell'ordine %s."
 
-#: pretix_xpay/xpay_api.py:394
+#: pretix_xpay/xpay_api.py:390
 msgid "Could not reach payment provider."
 msgstr "Impossibile raggiungere i server del servizio di pagamento."
