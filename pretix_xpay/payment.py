@@ -103,6 +103,7 @@ class XPayPaymentProvider(BasePaymentProvider):
                     help_text=_(
                         'This enables the endpoints /poll_pending_payments and /test_manual_refund_email for events in testmode'
                     ),
+                    required=False
                 )
             ),
         ] + list(super().settings_form_fields.items())
