@@ -16,7 +16,12 @@ class PluginApp(PluginConfig):
     class PretixPluginMeta:
         name = gettext_lazy("XPay")
         author = "Furizon Team"
-        description = gettext_lazy("Accept payments through the Nexi's XPay interface")
+        description = gettext_lazy(
+            "Accept payments through the Nexi's XPay interface. "
+            "Enable `descrizione`, `pretixOrder`, `pretixPayment` and `pretixEvent` parameters in the "
+            "backoffice, under 'Configuration', 'Additional parameters' to keep easier track "
+            "of the payments made through this plugin!"
+        )
         visible = True
         version = __version__
         category = "PAYMENT"

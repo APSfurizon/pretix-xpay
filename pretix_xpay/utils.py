@@ -43,8 +43,9 @@ def get_mac_secret_pass(provider: BasePaymentProvider) -> str:
         return provider.settings.mac_secret_pass
 
 
-def encode_order_id(orderPayment: OrderPayment, event: Event) -> str:
-    data: str = f"{event.organizer.slug}{event.slug}{orderPayment.full_id}gabibbo"
+def encode_order_id(orderPayment: OrderPayment, event: Event, provider: BasePaymentProvider) -> str:
+    secret: str = provider.settings.order_id_salt if provider.settings.order_id_salt else "gabibbo"
+    data: str = f"{event.organizer.slug}{event.slug}{orderPayment.full_id}{secret}"
     return hashlib.sha256(data.encode('utf-8')).hexdigest()[:18]
 
 
@@ -75,7 +76,7 @@ def send_refund_needed_email(orderPayment: OrderPayment, origin: str = "-") -> N
         ))
         ctx = {
             "op_full_id": orderPayment.full_id,
-            "transaction_id": encode_order_id(orderPayment, orderPayment.order.event),
+            "transaction_id": encode_order_id(orderPayment, orderPayment.order.event, orderPayment.payment_provider),
             "origin": origin
         }
         logger.info(f"XPAY_send_refund_needed_email [{orderPayment.full_id}]: Sending email with origin {origin}")

@@ -44,7 +44,11 @@ def pretixcontrol_logentry_display(sender, logentry, **kwargs):
 @scopes_disabled()
 def poll_pending_payments(sender, **kwargs):
     logger.info("XPAY_poll_pending_payments: Running runperiodic")
-    for payment in OrderPayment.objects.filter(provider="xpay", state__in=[OrderPayment.PAYMENT_STATE_PENDING, OrderPayment.PAYMENT_STATE_CREATED]):
+    for payment in OrderPayment.objects.filter(provider="xpay", state__in=[
+        OrderPayment.PAYMENT_STATE_PENDING,
+        OrderPayment.PAYMENT_STATE_CREATED,
+        OrderPayment.PAYMENT_STATE_CANCELED
+    ]):
         settings = get_settings_object(payment.order.event)
         mins = int(settings.poll_pending_timeout) if settings.poll_pending_timeout else 60
 

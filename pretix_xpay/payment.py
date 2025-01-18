@@ -99,6 +99,17 @@ class XPayPaymentProvider(BasePaymentProvider):
                 ),
             ),
             (
+                "order_id_salt",
+                forms.CharField(
+                    label=_("Order id salt"),
+                    help_text=_(
+                        'To generate xpay order ids we need a random, secret string to prevent '
+                        'malicious users from generating fake order ids. '
+                    ),
+                    required=True
+                ),
+            ),
+            (
                 "poll_pending_timeout",
                 forms.IntegerField(
                     label=_("Pending order timeout (mins)"),

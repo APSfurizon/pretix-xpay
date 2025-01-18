@@ -40,7 +40,7 @@ def initialize_payment_get_params(payment: OrderPayment, provider: XPayPaymentPr
     :param int payment_pk: the payment's primary key
     :rtype: dict
     """
-    transaction_code = encode_order_id(payment, provider.event)
+    transaction_code = encode_order_id(payment, provider.event, provider)
     amount = int(payment.amount * 100)
 
     return {
@@ -76,7 +76,10 @@ def initialize_payment_get_params(payment: OrderPayment, provider: XPayPaymentPr
         # "mail": payment.order.email, # Disabled because someone could create an order for somebody else. If this field is specified, xpay forces this email
         "languageId": translate_language(payment.order),
         "descrizione": build_order_desc(payment.order),
-        "TCONTAB": "D"  # Preauthing first. We're gonna finalize the payment after we're sure there's enough quota and the order is marked as paid
+        "TCONTAB": "D",  # Preauthing first. We're gonna finalize the payment after we're sure there's enough quota and the order is marked as paid,
+        "pretixOrder": order_code,
+        "pretixPayment": payment.full_id,
+        "pretixEvent": f"{provider.event.organizer.slug}/{provider.event.slug}"
     }
 
 
@@ -111,7 +114,7 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     """
     logger.info(f"XPAY_confirm_preauth [{payment.full_id}]: Trying to capture preauth")
     alias_key = get_alias_key(provider)
-    transaction_code = encode_order_id(payment, provider.event)
+    transaction_code = encode_order_id(payment, provider.event, provider)
     amount = int(payment.amount * 100)
     timestamp = int(time() * 1000)
     hmac = generate_mac([
@@ -180,7 +183,7 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
     """
     logger.info(f"XPAY_refund_preauth [{payment.full_id}]: Trying to refund preauth")
     alias_key = get_alias_key(provider)
-    transaction_code = encode_order_id(payment, provider.event)
+    transaction_code = encode_order_id(payment, provider.event, provider)
     amount = int(payment.amount * 100)
     timestamp = int(time() * 1000)
     hmac = generate_mac([
@@ -246,7 +249,7 @@ def get_order_status(payment: OrderPayment, provider: XPayPaymentProvider) -> Or
     :raises ValueError: if the status request has its state to anything different than 'OK', if the HMAC verification fails or if it fails parsing the response.
     """
     alias_key = get_alias_key(provider)
-    transaction_code = encode_order_id(payment, provider.event)
+    transaction_code = encode_order_id(payment, provider.event, provider)
     timestamp = int(time() * 1000)
 
     hmac = generate_mac([
@@ -329,7 +332,7 @@ def refund(refund: OrderRefund, provider: XPayPaymentProvider):  # Same endpoint
     """
     logger.info(f"XPAY_refund [{refund.payment.full_id}@{refund.full_id}]: Trying to refund payment by {refund.amount}€")
     alias_key = get_alias_key(provider)
-    transaction_code = encode_order_id(refund.payment, provider.event)
+    transaction_code = encode_order_id(refund.payment, provider.event, provider)
     amount = int(refund.amount * 100)
     timestamp = int(time() * 1000)
 

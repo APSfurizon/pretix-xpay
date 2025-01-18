@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-12 20:09+0100\n"
+"POT-Creation-Date: 2025-01-16 15:12+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Furizon Team\n"
 "Language-Team: \n"
@@ -16,9 +16,13 @@ msgstr ""
 msgid "XPay"
 msgstr "XPay"
 
-#: pretix_xpay/apps.py:19
-msgid "Accept payments through the Nexi's XPay interface"
-msgstr "Accetta pagamenti mediante l'interfaccia di XPay"
+#: pretix_xpay/apps.py:20
+msgid ""
+"Accept payments through the Nexi's XPay interface. Enable `descrizione`, "
+"`pretixOrder`, `pretixPayment` and `pretixEvent` parameters in the "
+"backoffice, under 'Configuration', 'Additional parameters' to keep easier "
+"track of the payments made through this plugin!"
+msgstr ""
 
 #: pretix_xpay/payment.py:32
 msgid "Pay through XPay"
@@ -89,10 +93,20 @@ msgstr ""
 "convalidare i codici hash"
 
 #: pretix_xpay/payment.py:104
+msgid "Order id salt"
+msgstr ""
+
+#: pretix_xpay/payment.py:106
+msgid ""
+"To generate xpay order ids we need a random, secret string to prevent "
+"malicious users from generating fake order ids. "
+msgstr ""
+
+#: pretix_xpay/payment.py:115
 msgid "Pending order timeout (mins)"
 msgstr "Timeout scadenza ordini in attesa (minuti)"
 
-#: pretix_xpay/payment.py:109
+#: pretix_xpay/payment.py:120
 msgid ""
 "Pending and newly created payment orders are refreshed with regular "
 "intervals, to check if the user have actually paid, but left the process of "
@@ -104,11 +118,11 @@ msgstr ""
 "alla pagina di esito di Pretix. Questo timeout specifica in quanto tempo "
 "questi pagamenti dovrebbero essere considerati scaduti."
 
-#: pretix_xpay/payment.py:118
+#: pretix_xpay/payment.py:129
 msgid "Failed payments email address"
 msgstr "Indirizzi email per notifica pagamenti falliti"
 
-#: pretix_xpay/payment.py:120
+#: pretix_xpay/payment.py:131
 msgid ""
 "Enter an email address recipient for manual verification requests. It might "
 "happen because of a failed refund request, or an already charged payment."
@@ -117,11 +131,11 @@ msgstr ""
 "manuale. Potrebbe accadere per via di un'errore durante le richieste di "
 "rimborso automatiche, o per un pagamento contabilizzato da rimborsare."
 
-#: pretix_xpay/payment.py:128
+#: pretix_xpay/payment.py:139
 msgid "Enable test endpoints"
 msgstr "Abilita endpoint di test"
 
-#: pretix_xpay/payment.py:130
+#: pretix_xpay/payment.py:141
 msgid ""
 "This enables the endpoints /poll_pending_payments and /"
 "test_manual_refund_email for events in testmode"
@@ -129,7 +143,7 @@ msgstr ""
 "Abilita gli endpoint /poll_pending_payments e /test_manual_refund_email per "
 "gli eventi in modalità di test"
 
-#: pretix_xpay/payment.py:144
+#: pretix_xpay/payment.py:155
 #, python-brace-format
 msgid ""
 "The XPay plugin is operating in test mode. No money will actually be "
@@ -143,7 +157,7 @@ msgstr ""
 msgid "XPay reported an event (Status {status})."
 msgstr "XPay ha rilevato un evento (Stato {status})."
 
-#: pretix_xpay/signals.py:79
+#: pretix_xpay/signals.py:83
 msgid "Payment in refund or canceled state"
 msgstr "Pagamento rimborsato o cancellato"
 
@@ -220,11 +234,11 @@ msgstr "Abilitare JavaScript per continuare."
 msgid "Continue"
 msgstr "Continua"
 
-#: pretix_xpay/utils.py:68
+#: pretix_xpay/utils.py:69
 msgid "Severe error in XPay's payment process"
 msgstr "Errore grave nella fase di pagamento XPay"
 
-#: pretix_xpay/utils.py:70
+#: pretix_xpay/utils.py:71
 #, python-brace-format
 msgid ""
 "A severe error occurred while processing the OrderPayment {op_full_id} with "
@@ -254,11 +268,11 @@ msgstr ""
 "Per maggiori informazioni, contattaci su https://github.com/APSfurizon/"
 "pretix-xpay/"
 
-#: pretix_xpay/utils.py:110
+#: pretix_xpay/utils.py:111
 msgid "Could not parse operation."
 msgstr "Non è stato possibile elaborare un'operazione."
 
-#: pretix_xpay/utils.py:127 pretix_xpay/utils.py:141 pretix_xpay/utils.py:149
+#: pretix_xpay/utils.py:128 pretix_xpay/utils.py:142 pretix_xpay/utils.py:150
 #, python-format
 msgid "Could not parse order %s"
 msgstr "Impossibile elaborare l'ordine %s"
@@ -302,7 +316,7 @@ msgstr ""
 "C'è stato un errore nel pagamento. Clicca il pulsante per riprovare. "
 "Dettaglio errore: %s"
 
-#: pretix_xpay/xpay_api.py:137
+#: pretix_xpay/xpay_api.py:140
 #, python-format
 msgid ""
 "An error occurred with the XPay's servers while capturing the order. Contact "
@@ -315,7 +329,7 @@ msgstr ""
 "abbia avuto successo e che sia stata trasferita la giusta somma. Il codice "
 "di transazione è #%s. Dettagli errore: %s"
 
-#: pretix_xpay/xpay_api.py:150
+#: pretix_xpay/xpay_api.py:153
 #, python-format
 msgid ""
 "Preauth confirm request failed with error code %d: %s. Contact the event "
@@ -328,7 +342,7 @@ msgstr ""
 "successo e che sia stata trasferita la giusta somma. Il codice di "
 "transazione è #%s"
 
-#: pretix_xpay/xpay_api.py:158
+#: pretix_xpay/xpay_api.py:161
 #, python-format
 msgid ""
 "Unable to validate the preauth confirm. Contact the event organizer and "
@@ -339,7 +353,7 @@ msgstr ""
 "l'organizzatore per verificare che la transazione abbia avuto successo e che "
 "sia stata trasferita la giusta somma. Il codice di transazione è #%s"
 
-#: pretix_xpay/xpay_api.py:166
+#: pretix_xpay/xpay_api.py:169
 #, python-format
 msgid ""
 "Unknown server response (%s) in the preauth confirm process. Contact the "
@@ -352,7 +366,7 @@ msgstr ""
 "successo e che sia stata trasferita la giusta somma. Il codice di "
 "transazione è #%s"
 
-#: pretix_xpay/xpay_api.py:207
+#: pretix_xpay/xpay_api.py:210
 #, fuzzy, python-format
 #| msgid ""
 #| "An error occurred with the XPay's servers while issuing a refund. Contact "
@@ -367,7 +381,7 @@ msgstr ""
 "l'organizzatore per richiedere un rimborso manualmente. Il codice di "
 "transazione è #%s. Dettagli errore: %s"
 
-#: pretix_xpay/xpay_api.py:220
+#: pretix_xpay/xpay_api.py:223
 #, python-format
 msgid ""
 "Preauth refund request failed with error code %d: %s. Contact the event "
@@ -378,7 +392,7 @@ msgstr ""
 "l'organizzatore per richiedere un rimborso manualmente. Il codice di "
 "transazione è #%s"
 
-#: pretix_xpay/xpay_api.py:227
+#: pretix_xpay/xpay_api.py:230
 #, python-format
 msgid ""
 "Unable to validate the preauth refund. Contact the event organizer to "
@@ -388,7 +402,7 @@ msgstr ""
 "l'organizzatore per richiedere un rimborso manualmente. Il codice di "
 "transazione è #%s"
 
-#: pretix_xpay/xpay_api.py:234
+#: pretix_xpay/xpay_api.py:237
 #, python-format
 msgid ""
 "Unknown server response (%s) in the preauth confirm process. Contact the "
@@ -399,12 +413,12 @@ msgstr ""
 "Contatta l'organizzatore per richiedere un rimborso manualmente. Il codice "
 "di transazione è #%s"
 
-#: pretix_xpay/xpay_api.py:267
+#: pretix_xpay/xpay_api.py:270
 #, python-format
 msgid "XPay server error while checking the status for %s. Exception: %s"
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:271
+#: pretix_xpay/xpay_api.py:274
 #, python-format
 msgid ""
 "Unable to check the order status for %s. Error code: %d. Error message: "
@@ -413,17 +427,17 @@ msgstr ""
 "Non è stato possibile verificare lo stato dell'ordine %s. Codice errore %d. "
 "Messaggio errore: \"%s\""
 
-#: pretix_xpay/xpay_api.py:274 pretix_xpay/xpay_api.py:367
+#: pretix_xpay/xpay_api.py:277 pretix_xpay/xpay_api.py:370
 #, python-format
 msgid "Invalid parameter \"esito\" (%s) for %s."
 msgstr "Valore inatteso di \"esito\" (%s) per l'ordine %s."
 
-#: pretix_xpay/xpay_api.py:282
+#: pretix_xpay/xpay_api.py:285
 #, python-format
 msgid "Unable to validate the order status for %s."
 msgstr "Impossibile verificare lo stato dell'ordine %s."
 
-#: pretix_xpay/xpay_api.py:357
+#: pretix_xpay/xpay_api.py:360
 #, fuzzy, python-format
 #| msgid ""
 #| "An error occurred with the XPay's servers while capturing the order. "
@@ -441,7 +455,7 @@ msgstr ""
 "abbia avuto successo e che sia stata trasferita la giusta somma. Il codice "
 "di transazione è #%s. Dettagli errore: %s"
 
-#: pretix_xpay/xpay_api.py:363
+#: pretix_xpay/xpay_api.py:366
 #, fuzzy, python-format
 #| msgid ""
 #| "Unable to check the order status for %s. Error code: %d. Error message: "
@@ -451,12 +465,15 @@ msgstr ""
 "Non è stato possibile verificare lo stato dell'ordine %s. Codice errore %d. "
 "Messaggio errore: \"%s\""
 
-#: pretix_xpay/xpay_api.py:376
+#: pretix_xpay/xpay_api.py:379
 #, fuzzy, python-format
 #| msgid "Unable to validate the order status for %s."
 msgid "Unable to validate refund response for %s."
 msgstr "Impossibile verificare lo stato dell'ordine %s."
 
-#: pretix_xpay/xpay_api.py:390
+#: pretix_xpay/xpay_api.py:393
 msgid "Could not reach payment provider."
 msgstr "Impossibile raggiungere i server del servizio di pagamento."
+
+#~ msgid "Accept payments through the Nexi's XPay interface"
+#~ msgstr "Accetta pagamenti mediante l'interfaccia di XPay"
