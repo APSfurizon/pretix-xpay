@@ -1,0 +1,177 @@
+import requests
+import hashlib
+import sys
+from time import time
+from datetime import datetime
+from pretix_xpay.constants import *
+
+print(f"{sys.argv[0]} ALIAS_KEY SECRET_MAC ORG_SLUG EVENT_SLUG")
+
+ALIAS_KEY = sys.argv[1]
+MAC_SECRET_PASS = sys.argv[2]
+API_URL = PROD_URL
+HASH = "sha-1"
+SALT = "gabibbo"
+ORG_EVENT_SLUG = f"{sys.argv[3]}{sys.argv[4]}"
+
+def encode_order_id(paymentFullId) -> str:
+    data: str = f"{ORG_EVENT_SLUG}{paymentFullId}{SALT}"
+    print(data)
+    s = hashlib.sha256(data.encode('utf-8')).hexdigest()[:18]
+    print(s)
+    return s
+
+def generate_mac(data: list) -> str:
+    hash_algo = hashlib.new(HASH)
+    for el in data:
+        hash_algo.update(f"{el[0]}={str(el[1])}".encode("UTF-8"))
+    hash_algo.update(MAC_SECRET_PASS.encode("UTF-8"))
+    return hash_algo.hexdigest()
+
+class OrderOperation:
+    def __init__(self, data: dict):
+        if "tipoOperazione" not in data or "stato" not in data or "dataOperazione" not in data:
+            raise ValueError(_('Could not parse operation.'))
+        self.type = data["tipoOperazione"]
+        self.status = data["stato"]
+        # 2024-07-25 12:41:47.0
+        self.timestamp = datetime.strptime(data["dataOperazione"], "%Y-%m-%d %H:%M:%S.%f")
+class OrderReport:
+    def __init__(self, report: dict, transaction_id: str):
+        self.operations = []
+        # If order is not created
+        if report["stato"] in XPAY_RESULT_CANCELED:
+            self.fallback_status = report["stato"]
+            print(f"XPAY_OrderStatus_init [{transaction_id}]: Order was not created")
+            return
+
+        # Throw if report data is unparseable
+        is_valid = "codiceTransazione" in report and report["codiceTransazione"] == transaction_id
+        is_valid = is_valid and "dettaglio" in report and isinstance(report["dettaglio"], list) and len(report["dettaglio"]) > 0
+        if not is_valid:
+            print(f"XPAY_OrderStatus_init [{transaction_id}]: second is_valid check was false. REPORT = {report}")
+            raise ValueError(_('Could not parse order %s') % transaction_id)
+        self.transaction_id = report["codiceTransazione"]
+
+        # Throw if detail is unparseable
+        details = report["dettaglio"][0] # From the docs it looks like that there is only one detail
+        is_valid = is_valid and isinstance(details, dict) and "stato" in details
+        if not is_valid:
+            print(f"XPAY_OrderStatus_init [{transaction_id}]: third is_valid check was false. REPORT = {report}")
+            raise ValueError(_('Could not parse order %s') % transaction_id)
+
+        self.fallback_status = details["stato"]
+        if "operazioni" in details and isinstance(details["operazioni"], list):
+            for op in details["operazioni"]:
+                op_to_add = OrderOperation(op)
+                self.operations.append(op_to_add)
+    def operation_status(self):
+        return None if len(self.operations) == 0 else sorted(self.operations, key=lambda os: os.timestamp)[0].status
+    @property
+    def status(self):
+        return self.fallback_status if len(self.operations) == 0 else self.operation_status()
+class OrderStatus:
+    def __init__(self, transaction_id: str, data: dict):
+        # Throw if outside data is unparseable
+        is_valid = data and isinstance(data, dict) and "esito" in data and data["esito"] == "OK"
+        is_valid = is_valid and "report" in data and isinstance(data["report"], list)
+        is_valid = is_valid and len(data["report"]) > 0 and isinstance(data["report"][0], dict)
+        if not is_valid:
+            raise ValueError(_('Could not parse order %s') % transaction_id)
+        
+        self.report = []
+        for report in data["report"]:
+            self.report.append(OrderReport(report, transaction_id))
+    # We declare an order on which priority each set of status have
+    # We will only pick the best for the final one
+    def translateStatusToVal(self, status: str):
+        if status in XPAY_RESULT_CANCELED:
+            return 0
+        elif status in XPAY_RESULT_REFUNDED:
+            return 1
+        elif status in XPAY_RESULT_AUTHORIZED:
+            return 2
+        elif status in XPAY_RESULT_PENDING:
+            return 3
+        elif status in XPAY_RESULT_CAPTURED:
+            return 4
+    @property
+    def status(self):
+        val = -1
+        retStr = "-"
+        for report in self.report:
+            statusStr = report.status
+            statusVal = self.translateStatusToVal(statusStr)
+            if statusVal > val:
+                val = statusVal
+                retStr = statusStr
+        return retStr
+    
+def get_order_status(paymentFullId: str):
+    """
+    Creates a body to requests an order's status, then launches the request and analyzes its response.
+    If the response status is valid, it will try parse the response to an OrderStatus object.
+
+    :param OrderPayment payment: The payment from which issue a refund
+    :param XPayPaymentProvider provider: The payment provider which holds the XPay logic
+    :rtype: OrderStatus
+    :raises ValueError: if the status request has its state to anything different than 'OK', if the HMAC verification fails or if it fails parsing the response.
+    """
+    alias_key = ALIAS_KEY
+    transaction_code = encode_order_id(paymentFullId)
+    timestamp = int(time() * 1000)
+
+    hmac = generate_mac([
+        ("apiKey", alias_key),
+        ("codiceTransazione", transaction_code),
+        ("timeStamp", timestamp)
+    ])
+
+    body = {
+        "apiKey": alias_key,
+        "codiceTransazione": transaction_code,
+        "timeStamp": timestamp,
+        "mac": hmac
+    }
+    try:
+        result = post_api_call(ENDPOINT_ORDERS_STATUS, body)
+    except Exception as e:
+        raise RuntimeError("error api")
+    if (result["esito"] == "KO"):
+        if result["errore"]["codice"] == 2:  # https://ecommerce.nexi.it/specifiche-tecniche/tabelleecodifiche/codicierroreapirestful.html
+            raise RuntimeError("Order not found")
+        raise ValueError(('Unable to check the order status for %s. Error code: %d. Error message: "%s"')
+                         % (transaction_code, result["errore"]["codice"], result["errore"]["messaggio"]))
+    if (result["esito"] != "OK"):
+        raise ValueError(('Invalid parameter "esito" (%s) for %s.') % (result["esito"], transaction_code))
+
+    hmac = generate_mac([
+        ("esito", result["esito"]),
+        ("idOperazione", result["idOperazione"]),
+        ("timeStamp", result["timeStamp"])
+    ])
+    if (hmac != result["mac"]):
+        raise ValueError(('Unable to validate the order status for %s.') % transaction_code)
+
+    try:
+        to_return = OrderStatus(transaction_code, result)
+    except Exception as e:
+        print("Shit")
+        raise e
+    return to_return
+
+def post_api_call(path: str, params: dict):
+    '''Launches a POST request to XPay's servers'''
+    try:
+        #  timeout to slightly more than a multiple of 3, to account for TCP retrasmission time
+        r = requests.post(f"{API_URL}{path}", json=params, timeout=31.5)
+        r.raise_for_status()
+        print(r.text)
+        return r.json()
+    except requests.RequestException:
+        print("error")
+
+if __name__ == "__main__":
+    a = get_order_status("J3DTR-P-3")
+    print(a)
+    print(a.status)

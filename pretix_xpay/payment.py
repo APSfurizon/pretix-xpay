@@ -46,10 +46,10 @@ class XPayPaymentProvider(BasePaymentProvider):
                 forms.CharField(
                     label=_("XPay's Alias key"),
                     help_text=_(
-                        'Check your backoffice area to recover the Alias value.'
+                        "Check your backoffice area to recover the Alias value."
                     ),
-                    required=True
-                )
+                    required=True,
+                ),
             ),
             (
                 "hash",
@@ -60,18 +60,18 @@ class XPayPaymentProvider(BasePaymentProvider):
                         ("sha256", "SHA-256"),
                     ),
                     help_text=_(
-                        'By default it is set to SHA-1, contact XPay\'s support in order to use SHA-256.'
+                        "By default it is set to SHA-1, contact XPay's support in order to use SHA-256."
                     ),
-                )
+                ),
             ),
             (
                 "mac_secret_pass",
                 SecretKeySettingsField(
                     label=_("Mac Secret"),
                     help_text=_(
-                        'Check your backoffice area to recover the mac secret value. It is used to secure the hash'
+                        "Check your backoffice area to recover the mac secret value. It is used to secure the hash"
                     ),
-                    required=True
+                    required=True,
                 ),
             ),
             (
@@ -79,23 +79,23 @@ class XPayPaymentProvider(BasePaymentProvider):
                 forms.CharField(
                     label=_("TEST - XPay's Alias key"),
                     help_text=_(
-                        'Check your backoffice area to recover the Alias value. '
-                        'This is used ONLY when the event is in test mode. '
-                        'If not set, it will fallback to the default Alias key.'
+                        "Check your backoffice area to recover the Alias value. "
+                        "This is used ONLY when the event is in test mode. "
+                        "If not set, it will fallback to the default Alias key."
                     ),
-                    required=False
-                )
+                    required=False,
+                ),
             ),
             (
                 "test_mac_secret_pass",
                 forms.CharField(
                     label=_("TEST - Mac Secret"),
                     help_text=_(
-                        'Check your backoffice area to recover the mac secret value. It is used to secure the hash'
-                        'This is used ONLY when the event is in test mode. '
-                        'If not set, it will fallback to the default Mac secret.'
+                        "Check your backoffice area to recover the mac secret value. It is used to secure the hash"
+                        "This is used ONLY when the event is in test mode. "
+                        "If not set, it will fallback to the default Mac secret."
                     ),
-                    required=False
+                    required=False,
                 ),
             ),
             (
@@ -103,10 +103,10 @@ class XPayPaymentProvider(BasePaymentProvider):
                 forms.CharField(
                     label=_("Order id salt"),
                     help_text=_(
-                        'To generate xpay order ids we need a random, secret string to prevent '
-                        'malicious users from generating fake order ids. '
+                        "To generate xpay order ids we need a random, secret string to prevent "
+                        "malicious users from generating fake order ids. "
                     ),
-                    required=True
+                    required=True,
                 ),
             ),
             (
@@ -117,9 +117,9 @@ class XPayPaymentProvider(BasePaymentProvider):
                     max_value=50000000,
                     step_size=1,
                     help_text=_(
-                        'Pending and newly created payment orders are refreshed with regular intervals, '
-                        'to check if the user have actually paid, but left the process of returning back to pretix\'s pages. '
-                        'This timeout specifies in how much time the payment should be considered over and should be marked as expired.'
+                        "Pending and newly created payment orders are refreshed with regular intervals, "
+                        "to check if the user have actually paid, but left the process of returning back to pretix's pages. "
+                        "This timeout specifies in how much time the payment should be considered over and should be marked as expired."
                     ),
                 ),
             ),
@@ -128,20 +128,20 @@ class XPayPaymentProvider(BasePaymentProvider):
                 forms.EmailField(
                     label=_("Failed payments email address"),
                     help_text=_(
-                        'Enter an email address recipient for manual verification requests. '
-                        'It might happen because of a failed refund request, or an already charged payment.'
+                        "Enter an email address recipient for manual verification requests. "
+                        "It might happen because of a failed refund request, or an already charged payment."
                     ),
-                )
+                ),
             ),
             (
                 "enable_test_endpoints",
                 forms.BooleanField(
                     label=_("Enable test endpoints"),
                     help_text=_(
-                        'This enables the endpoints /poll_pending_payments and /test_manual_refund_email for events in testmode'
+                        "This enables the endpoints /poll_pending_payments and /test_manual_refund_email for events in testmode"
                     ),
-                    required=False
-                )
+                    required=False,
+                ),
             ),
         ] + list(super().settings_form_fields.items())
         d = OrderedDict(fields)
@@ -164,67 +164,108 @@ class XPayPaymentProvider(BasePaymentProvider):
         :param OrderPayment payment: the order's payment
         :raises Exception: if the payment is not found or already accounted
         """
-        logger.info(f"XPAY_cancel_payment [{payment.full_id}]: Trying to cancel a payment")
+        logger.info(
+            f"XPAY_cancel_payment [{payment.full_id}]: Trying to cancel a payment"
+        )
         try:
             try:
                 order_status = xpay.get_order_status(payment=payment, provider=self)
             except Http404:
-                logger.error(f"XPAY_cancel_payment [{payment.full_id}]: Order not found")
+                logger.error(
+                    f"XPAY_cancel_payment [{payment.full_id}]: Order not found"
+                )
                 super().cancel_payment(payment)
                 raise Exception("Payment not found")
 
-            if order_status.status in XPAY_RESULT_AUTHORIZED or order_status.status in XPAY_RESULT_PENDING:
-                logger.error(f"XPAY_cancel_payment [{payment.full_id}]: Refunding preauth payment")
+            if (
+                order_status.status in XPAY_RESULT_AUTHORIZED
+                or order_status.status in XPAY_RESULT_PENDING
+            ):
+                logger.error(
+                    f"XPAY_cancel_payment [{payment.full_id}]: Refunding preauth payment"
+                )
                 xpay.refund_preauth(payment, self)
                 super().cancel_payment(payment)
 
             elif order_status.status in XPAY_RESULT_CAPTURED:
-                logger.error(f"XPAY_cancel_payment [{payment.full_id}]: Preauthorized payment was already captured!")
+                logger.error(
+                    f"XPAY_cancel_payment [{payment.full_id}]: Preauthorized payment was already captured!"
+                )
                 super().cancel_payment(payment)
-                send_refund_needed_email(payment, origin="XPayPaymentProvider.cancel_payment")
+                send_refund_needed_email(
+                    payment, origin="XPayPaymentProvider.cancel_payment"
+                )
                 raise Exception("Pre-authorized payment was already captured")
 
-            elif order_status.status in XPAY_RESULT_REFUNDED or order_status.status in XPAY_RESULT_CANCELED:
-                logger.error(f"XPAY_cancel_payment [{payment.full_id}]: Payment was already in refunded or canceled state")
+            elif (
+                order_status.status in XPAY_RESULT_REFUNDED
+                or order_status.status in XPAY_RESULT_CANCELED
+            ):
+                logger.error(
+                    f"XPAY_cancel_payment [{payment.full_id}]: Payment was already in refunded or canceled state"
+                )
                 super().cancel_payment(payment)
 
             else:
-                logger.error(f"XPAY_cancel_payment [{payment.full_id}]: Unknown state {order_status.status}. Cancling the payment anyway")
+                logger.error(
+                    f"XPAY_cancel_payment [{payment.full_id}]: Unknown state {order_status.status}. Cancling the payment anyway"
+                )
                 super().cancel_payment(payment)
                 raise Exception(f"Unknown state: {order_status.status}")
 
         except BaseException as e:
-            logger.warning(f"A warning occurred while trying to cancel the payment {payment.full_id}: {repr(e)}")
+            logger.warning(
+                f"A warning occurred while trying to cancel the payment {payment.full_id}: {repr(e)}"
+            )
 
     def payment_form_render(self, request) -> str:
-        '''Renders an explainatory paragraph'''
+        """Renders an explainatory paragraph"""
         template = get_template("pretix_xpay/checkout_payment_form.html")
         ctx = {"request": request, "event": self.event, "settings": self.settings}
         return template.render(ctx)
 
     def checkout_confirm_render(self, request) -> str:
-        '''Renders the checkout confirm form'''
+        """Renders the checkout confirm form"""
         template = get_template("pretix_xpay/checkout_payment_confirm.html")
-        ctx = {"request": request, "event": self.event, "settings": self.settings, "provider": self}
+        ctx = {
+            "request": request,
+            "event": self.event,
+            "settings": self.settings,
+            "provider": self,
+        }
         return template.render(ctx)
 
     def payment_pending_render(self, request, payment) -> str:
-        '''Renders ustomer-facing instructions on how to proceed with a pending payment'''
+        """Renders ustomer-facing instructions on how to proceed with a pending payment"""
         template = get_template("pretix_xpay/pending.html")
         payment_info = json.loads(payment.info) if payment.info else None
-        ctx = {"request": request, "event": self.event, "settings": self.settings, "provider": self,
-               "order": payment.order, "payment": payment, "payment_info": payment_info}
+        ctx = {
+            "request": request,
+            "event": self.event,
+            "settings": self.settings,
+            "provider": self,
+            "order": payment.order,
+            "payment": payment,
+            "payment_info": payment_info,
+        }
         return template.render(ctx)
 
     def payment_control_render(self, request, payment) -> str:
-        '''Returns to admins the HTML code containing information regarding the current payment status and, if applicable, next steps. NOT MANDATORY'''
+        """Returns to admins the HTML code containing information regarding the current payment status and, if applicable, next steps. NOT MANDATORY"""
         template = get_template("pretix_xpay/control.html")
         payment_info = json.loads(payment.info) if payment.info else None
-        ctx = {"request": request, "event": self.event, "settings": self.settings, "payment_info": payment_info, "payment": payment, "provider": self}
+        ctx = {
+            "request": request,
+            "event": self.event,
+            "settings": self.settings,
+            "payment_info": payment_info,
+            "payment": payment,
+            "provider": self,
+        }
         return template.render(ctx)
 
     def shred_payment_info(self, obj: OrderPayment):
-        '''Shred payment info for enhanceh anonymization'''
+        """Shred payment info for enhanceh anonymization"""
         logger.info(f"XPAY_shred_payment_info [{obj.full_id}]: Shredding payment info")
         if not obj.info:
             return
@@ -250,8 +291,10 @@ class XPayPaymentProvider(BasePaymentProvider):
         obj.save(update_fields=["info"])
 
     def execute_payment(self, request: HttpRequest, payment: OrderPayment):
-        '''Will redirect user to the payment creation view'''
-        logger.info(f"XPAY_execute_payment [{payment.full_id}]: Redirecting user to internal redirect page")
+        """Will redirect user to the payment creation view"""
+        logger.info(
+            f"XPAY_execute_payment [{payment.full_id}]: Redirecting user to internal redirect page"
+        )
         return eventreverse(
             self.event,
             "plugins:pretix_xpay:redirect",
@@ -263,7 +306,7 @@ class XPayPaymentProvider(BasePaymentProvider):
         )
 
     def execute_refund(self, refund: OrderRefund):
-        '''Executes a partial or full refund request'''
+        """Executes a partial or full refund request"""
         xpay.refund(refund, self)
         refund.save()
         refund.done()

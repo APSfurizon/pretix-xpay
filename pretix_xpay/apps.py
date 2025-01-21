@@ -25,7 +25,7 @@ class PluginApp(PluginConfig):
         visible = True
         version = __version__
         category = "PAYMENT"
-        picture = 'pretix_xpay/XPay-logo.png'
+        picture = "pretix_xpay/XPay-logo.png"
         compatibility = "pretix>=2024.7.0"
 
     def ready(self):
