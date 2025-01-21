@@ -118,6 +118,7 @@ class OrderOperation:
 class OrderStatus:
     def __init__(self, transaction_id: str, data: dict):
         logger.info(f"XPAY_OrderStatus_init [{transaction_id}]: Parsing order status")
+        logger.debug(data)
         self.operations = []
         # Throw if outside data is unparseable
         is_valid = data and isinstance(data, dict) and "esito" in data and data["esito"] == "OK"

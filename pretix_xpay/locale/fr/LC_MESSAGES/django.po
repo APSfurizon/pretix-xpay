@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-16 15:12+0100\n"
+"POT-Creation-Date: 2025-01-19 00:53+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -138,7 +138,7 @@ msgstr ""
 msgid "XPay reported an event (Status {status})."
 msgstr ""
 
-#: pretix_xpay/signals.py:83
+#: pretix_xpay/signals.py:84
 msgid "Payment in refund or canceled state"
 msgstr ""
 
@@ -245,7 +245,7 @@ msgid ""
 "confirmed or not."
 msgstr ""
 
-#: pretix_xpay/views.py:75 pretix_xpay/views.py:98 pretix_xpay/views.py:124
+#: pretix_xpay/views.py:75 pretix_xpay/views.py:98 pretix_xpay/views.py:132
 msgid "The payment has failed. You can click below to try again."
 msgstr ""
 
@@ -253,19 +253,19 @@ msgstr ""
 msgid "Payment result is in a failed status"
 msgstr ""
 
-#: pretix_xpay/views.py:104
+#: pretix_xpay/views.py:112
 msgid ""
 "Sorry, we could not validate the payment result. Please try again or contact "
 "the event organizer to check if your payment was successful."
 msgstr ""
 
-#: pretix_xpay/views.py:113
+#: pretix_xpay/views.py:121
 msgid ""
 "The was an availability error while confirming your order! A refund has been "
 "issued."
 msgstr ""
 
-#: pretix_xpay/views.py:116
+#: pretix_xpay/views.py:124
 #, python-format
 msgid "The payment has failed. You can click below to try again. Details: %s"
 msgstr ""

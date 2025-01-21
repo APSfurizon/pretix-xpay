@@ -96,6 +96,14 @@ class ReturnView(XPayOrderView, View):
             logger.error(f"XPAY_return_handle [{self.payment.full_id}]: payment failed gracefully.")
             self.payment.fail(info=dict(data.items()), log_data={"result": self.kwargs.get("result"), **dict(data.items())})
             messages.error(self.request, _("The payment has failed. You can click below to try again."))
+            try:
+                # We've faced a coolTM nexi bug, where an user was redirected back to the KO page, however the preauthorize was successful.
+                # At midnight pretix automatically captured his preauth, taking the money from his card, but since the pretix payment
+                # was in a failed state, it was never refreshed and his order never went overpaid.
+                # This call here is to try to prevent this from happening
+                xpay.refund_preauth(self.payment, self.pprov)
+            except PaymentException as e:
+                logger.error(f"ReturnView [{self.payment.full_id}]: refund_preauth failed after the user was redirected back to KO page: {repr(e)}")
             return self._redirect_to_order()
 
         elif self.kwargs.get("result") == "ok":
@@ -178,3 +186,19 @@ class ManualRefundEmailView(XPayOrderView, View):
                 send_refund_needed_email(self.payment, origin="Testing! :3")
                 return HttpResponse("ok", content_type="text/plain")
         return HttpResponse("nope", content_type="text/plain")
+    
+
+@method_decorator(xframe_options_exempt, "dispatch")
+class OrderInfoView(XPayOrderView, View):
+    def get(self, request: HttpRequest, *args, **kwargs):
+        from pretix_xpay.utils import send_refund_needed_email
+        if self.order.event.testmode:
+            settings = get_settings_object(self.order.event)
+            if settings.enable_test_endpoints:
+                logger.info(f"test_manual_refund_email called with order: {self.order.code}")
+                payments = OrderPayment.objects.filter(order=self.order)
+                for payment in payments:
+                    xpay.get_order_status(payment, self.pprov)
+                return HttpResponse("ok", content_type="text/plain")
+        return HttpResponse("nope", content_type="text/plain")
+

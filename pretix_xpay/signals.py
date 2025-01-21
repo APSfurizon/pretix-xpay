@@ -52,8 +52,9 @@ def poll_pending_payments(sender, **kwargs):
         settings = get_settings_object(payment.order.event)
         mins = int(settings.poll_pending_timeout) if settings.poll_pending_timeout else 60
 
-        if payment.order.status != Order.STATUS_EXPIRED and payment.order.status != Order.STATUS_PENDING:
-            continue
+        # We need to process even confirmed payments to find if someone has paid two times and make the order overpaid
+        # if payment.order.status != Order.STATUS_EXPIRED and payment.order.status != Order.STATUS_PENDING:
+        #    continue
 
         try:
             provider = payment.payment_provider
@@ -79,7 +80,7 @@ def poll_pending_payments(sender, **kwargs):
                         payment.save(update_fields=["state"])
 
             elif data.status in XPAY_RESULT_REFUNDED or data.status in XPAY_RESULT_CANCELED:
-                logger.info(f"XPAY_poll_pending_payments [{payment.full_id}]: Canceling payment because found in a refunded or canceled status: {data.status}")
+                logger.info(f"XPAY_poll_pending_payments [{payment.full_id}]: Failing payment because found in a refunded or canceled status: {data.status}")
                 payment.fail(info={"error": str(_("Payment in refund or canceled state"))})
 
             else:

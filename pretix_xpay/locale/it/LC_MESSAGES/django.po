@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-16 15:12+0100\n"
+"POT-Creation-Date: 2025-01-19 00:53+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Furizon Team\n"
 "Language-Team: \n"
@@ -157,7 +157,7 @@ msgstr ""
 msgid "XPay reported an event (Status {status})."
 msgstr "XPay ha rilevato un evento (Stato {status})."
 
-#: pretix_xpay/signals.py:83
+#: pretix_xpay/signals.py:84
 msgid "Payment in refund or canceled state"
 msgstr "Pagamento rimborsato o cancellato"
 
@@ -285,7 +285,7 @@ msgstr ""
 "Il tuo pagamento è in attesa. Verrai notificato qualora verrà confermato o "
 "meno."
 
-#: pretix_xpay/views.py:75 pretix_xpay/views.py:98 pretix_xpay/views.py:124
+#: pretix_xpay/views.py:75 pretix_xpay/views.py:98 pretix_xpay/views.py:132
 msgid "The payment has failed. You can click below to try again."
 msgstr "C'è stato un errore nel pagamento. Clicca il pulsante per riprovare."
 
@@ -293,7 +293,7 @@ msgstr "C'è stato un errore nel pagamento. Clicca il pulsante per riprovare."
 msgid "Payment result is in a failed status"
 msgstr "Lo stato di pagamento risulta fallito"
 
-#: pretix_xpay/views.py:104
+#: pretix_xpay/views.py:112
 msgid ""
 "Sorry, we could not validate the payment result. Please try again or contact "
 "the event organizer to check if your payment was successful."
@@ -301,7 +301,7 @@ msgstr ""
 "C'è stato un problema nell'elaborare il pagamento. Riprova o contatta "
 "l'organizzatore per controllare che il pagamento sia riuscito."
 
-#: pretix_xpay/views.py:113
+#: pretix_xpay/views.py:121
 msgid ""
 "The was an availability error while confirming your order! A refund has been "
 "issued."
@@ -309,7 +309,7 @@ msgstr ""
 "C'è stato un problema di disponibilità dei prodotti durante la conferma! ́È "
 "stato richiesto un rimborso."
 
-#: pretix_xpay/views.py:116
+#: pretix_xpay/views.py:124
 #, python-format
 msgid "The payment has failed. You can click below to try again. Details: %s"
 msgstr ""
