@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-21 16:47+0100\n"
+"POT-Creation-Date: 2025-01-25 23:54+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -306,7 +306,7 @@ msgid ""
 "the transaction code #%s"
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:267
+#: pretix_xpay/xpay_api.py:269
 #, python-format
 msgid ""
 "An error occurred with the XPay's servers while issuing a refund of a "
@@ -314,7 +314,7 @@ msgid ""
 "to remember the transaction code #%s. Exception: %s"
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:290
+#: pretix_xpay/xpay_api.py:297
 #, python-format
 msgid ""
 "Preauth refund request failed with error code %d: %s. Contact the event "
@@ -322,14 +322,14 @@ msgid ""
 "transaction code #%s"
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:308
+#: pretix_xpay/xpay_api.py:315
 #, python-format
 msgid ""
 "Unable to validate the preauth refund. Contact the event organizer to "
 "execute the refund manually. Be sure to remember the transaction code #%s"
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:324
+#: pretix_xpay/xpay_api.py:331
 #, python-format
 msgid ""
 "Unknown server response (%s) in the preauth confirm process. Contact the "
@@ -337,29 +337,29 @@ msgid ""
 "transaction code #%s"
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:366
+#: pretix_xpay/xpay_api.py:373
 #, python-format
 msgid "XPay server error while checking the status for %s. Exception: %s"
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:376
+#: pretix_xpay/xpay_api.py:383
 #, python-format
 msgid ""
 "Unable to check the order status for %s. Error code: %d. Error message: "
 "\"%s\""
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:386 pretix_xpay/xpay_api.py:527
+#: pretix_xpay/xpay_api.py:393 pretix_xpay/xpay_api.py:534
 #, python-format
 msgid "Invalid parameter \"esito\" (%s) for %s."
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:400
+#: pretix_xpay/xpay_api.py:407
 #, python-format
 msgid "Unable to validate the order status for %s."
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:503
+#: pretix_xpay/xpay_api.py:510
 #, python-format
 msgid ""
 "An error occurred with the XPay's servers while refunding the order. Contact "
@@ -368,16 +368,16 @@ msgid ""
 "remember the transaction code #%s. Exception: %s"
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:515
+#: pretix_xpay/xpay_api.py:522
 #, python-format
 msgid "Unable to refund payment %s. Error code: %d. Error message: \"%s\""
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:544
+#: pretix_xpay/xpay_api.py:551
 #, python-format
 msgid "Unable to validate refund response for %s."
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:563
+#: pretix_xpay/xpay_api.py:570
 msgid "Could not reach payment provider."
 msgstr ""

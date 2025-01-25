@@ -222,7 +222,9 @@ def confirm_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         )
 
 
-def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
+def refund_preauth(
+    payment: OrderPayment, provider: XPayPaymentProvider, sendKoEmail=True
+):
     """
     Creates the body for a POST request to issue a refund of a preauthorized transaction, launches it and analyzes the returned data.
 
@@ -284,7 +286,12 @@ def refund_preauth(payment: OrderPayment, provider: XPayPaymentProvider):
         logger.error(
             f"XPAY_refund_preauth [{payment.full_id}]: preauth refund request failed gracefully."
         )
-        send_refund_needed_email(payment, "xpay.refund_preauth-ko")
+        if sendKoEmail:
+            send_refund_needed_email(payment, "xpay.refund_preauth-ko")
+        else:
+            logger.warning(
+                f"XPAY_refund_preauth [{payment.full_id}]: skipping sending refund needed email after a KO"
+            )
         raise PaymentException(
             _(
                 "Preauth refund request failed with error code %d: %s. Contact the event organizer to execute the refund manually. "

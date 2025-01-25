@@ -146,7 +146,7 @@ class ReturnView(XPayOrderView, View):
                 # At midnight pretix automatically captured his preauth, taking the money from his card, but since the pretix payment
                 # was in a failed state, it was never refreshed and his order never went overpaid.
                 # This call here is to try to prevent this from happening
-                xpay.refund_preauth(self.payment, self.pprov)
+                xpay.refund_preauth(self.payment, self.pprov, sendKoEmail=False)
             except PaymentException as e:
                 logger.error(
                     f"ReturnView [{self.payment.full_id}]: refund_preauth failed after the user was redirected back to KO page: {repr(e)}"
