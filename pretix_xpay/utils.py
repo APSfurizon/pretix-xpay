@@ -136,9 +136,16 @@ class OrderOperation:
         self.type = data["tipoOperazione"]
         self.status = data["stato"]
         # 2024-07-25 12:41:47.0
-        self.timestamp = datetime.strptime(
-            data["dataOperazione"], "%Y-%m-%d %H:%M:%S.%f"
-        )
+        # By docs this should only contains the date, but in prod it contains everything
+        if ("-" in data["dataOperazione"]):
+            self.timestamp = datetime.strptime(
+                data["dataOperazione"], "%Y-%m-%d %H:%M:%S.%f"
+            )
+        else:
+            self.timestamp = datetime.strptime(
+                data["dataOperazione"], "%Y-%m-%d"
+            )
+        self.full_data = data
 
 
 class OrderReport:
@@ -174,6 +181,7 @@ class OrderReport:
         details = report["dettaglio"][
             0
         ]  # From the docs it looks like that there is only one detail
+        self.details = details
         is_valid = is_valid and isinstance(details, dict) and "stato" in details
         if not is_valid:
             logger.debug(
@@ -186,6 +194,7 @@ class OrderReport:
             for op in details["operazioni"]:
                 op_to_add = OrderOperation(op)
                 self.operations.append(op_to_add)
+        self.full_data = report
 
     def operation_status(self):
         return (
@@ -228,6 +237,8 @@ class OrderStatus:
         for report in data["report"]:
             self.report.append(OrderReport(report, transaction_id))
 
+        self.full_data = data
+
     # We declare an order on which priority each set of status have
     # We will only pick the best for the final one
     def translateStatusToVal(self, status: str):
@@ -241,15 +252,62 @@ class OrderStatus:
             return 3
         elif status in XPAY_RESULT_CAPTURED:
             return 4
-
-    @property
-    def status(self):
+        
+    def findBestReport(self) -> OrderReport:
         val = -1
-        retStr = "-"
+        retReport = None
         for report in self.report:
-            statusStr = report.status
-            statusVal = self.translateStatusToVal(statusStr)
+            statusVal = self.translateStatusToVal(report.status)
             if statusVal > val:
                 val = statusVal
-                retStr = statusStr
-        return retStr
+                retReport = report
+        return retReport
+
+    @property
+    def status(self) -> str:
+        report = self.findBestReport()
+        return "-" if report is None else report.status
+    
+    def updatePaymentInformation(self, payment: OrderPayment, provider: BasePaymentProvider):
+        info = {
+            "alias": get_alias_key(provider)
+        }
+        report: OrderReport = self.findBestReport()
+        if (report is not None):
+            date = datetime.strptime(
+                report.full_data["dataTransazione"], "%Y-%m-%d %H:%M:%S.%f"
+            )
+            # Shitty-ass code, but the api is as bad
+            descrizione: str = report.full_data["parametri"]
+            descrizione = [] if descrizione is None else descrizione.split("descrizione=")
+
+            info = {
+                **info,
+                "brand": report.full_data["brand"],
+                "codAut": report.full_data["codiceAutorizzazione"],
+                "codTrans": report.full_data["codiceTransazione"],
+                "data": date.strftime("%Y%m%d"),
+                "orario": date.strftime("%H%M%S"),
+                "descrizione": descrizione[1].split("&")[0] if len(descrizione) > 1 else "-",
+                "divisa": report.full_data["divisa"],
+                "importo": report.full_data["importo"],
+                "languageId": report.full_data["nazione"],
+                "nazionalita": report.full_data["nazione"],
+                "mail": report.full_data["mail"],
+                "merchantnumber": report.full_data["numeroMerchant"],
+                "pan": report.full_data["pan"],
+                "scadenza_pan": report.full_data["scadenza"],
+                "tipoProdotto": report.full_data["tipoProdotto"],
+                "tipoTransazione": report.full_data["tipoTransazione"]
+            }
+            
+            if (report.details is not None):
+                details = report.details
+                info = {
+                    **info,
+                    "cognome": details["cognome"],
+                    "nome": details["nome"],
+                }
+
+        payment.info_data = {**payment.info_data, **info}
+        payment.save(update_fields=["info"])

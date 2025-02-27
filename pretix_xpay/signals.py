@@ -23,7 +23,7 @@ from pretix_xpay.constants import (
     XPAY_RESULT_REFUNDED,
 )
 from pretix_xpay.payment import XPayPaymentProvider
-from pretix_xpay.utils import get_settings_object, send_refund_needed_email
+from pretix_xpay.utils import get_settings_object, send_refund_needed_email, OrderStatus
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,13 @@ def poll_pending_payments(sender, **kwargs):
 
         try:
             provider = payment.payment_provider
-            data = xpay.get_order_status(payment=payment, provider=provider)
+            data: OrderStatus = xpay.get_order_status(payment=payment, provider=provider)
+            try:
+                data.updatePaymentInformation(payment, provider)
+            except Exception as e:
+                logger.warning(
+                    f"XPAY_poll_pending_payments [{payment.full_id}]: Exception in updating payment info: {repr(e)}"
+                )
 
             if data.status in XPAY_RESULT_AUTHORIZED:
                 xpay.confirm_payment_and_capture_from_preauth(

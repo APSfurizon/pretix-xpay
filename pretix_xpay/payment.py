@@ -254,6 +254,7 @@ class XPayPaymentProvider(BasePaymentProvider):
         """Returns to admins the HTML code containing information regarding the current payment status and, if applicable, next steps. NOT MANDATORY"""
         template = get_template("pretix_xpay/control.html")
         payment_info = json.loads(payment.info) if payment.info else None
+
         ctx = {
             "request": request,
             "event": self.event,
@@ -271,20 +272,28 @@ class XPayPaymentProvider(BasePaymentProvider):
             return
 
         d = json.loads(obj.info)
+        if "descrizione" in d:
+            d["descrizione"] = "█"
+        if "nome" in d:
+            d["nome"] = "█"
         if "cognome" in d:
             d["cognome"] = "█"
         if "mail" in d:
             d["mail"] = "█"
-        if "nome" in d:
-            d["nome"] = "█"
-        if "pan" in d:
-            d["pan"] = "█"
         if "regione" in d:
             d["regione"] = "█"
-        if "scadenza_pan" in d:
-            d["scadenza_pan"] = "█"
+        if "nazionalita" in d:
+            d["nazionalita"] = "█"
+        if "languageId" in d:
+            d["languageId"] = "█"
         if "tipoProdotto" in d:
             d["tipoProdotto"] = "█"
+        if "pan" in d:
+            d["pan"] = "█"
+        if "scadenza_pan" in d:
+            d["scadenza_pan"] = "█"
+        if "selectedcard" in d:
+            d["selectedcard"] = "█"
 
         d["_shredded"] = True
         obj.info = json.dumps(d)
