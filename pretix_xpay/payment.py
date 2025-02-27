@@ -1,6 +1,7 @@
 import json
 import logging
 from collections import OrderedDict
+from datetime import datetime
 from django import forms
 from django.http import Http404, HttpRequest
 from django.template.loader import get_template
@@ -254,7 +255,25 @@ class XPayPaymentProvider(BasePaymentProvider):
         """Returns to admins the HTML code containing information regarding the current payment status and, if applicable, next steps. NOT MANDATORY"""
         template = get_template("pretix_xpay/control.html")
         payment_info = json.loads(payment.info) if payment.info else None
-
+        date = None
+        amount = None
+        cardInfo = None
+        if payment_info is not None:
+            if payment_info['data'] is not None and payment_info['orario'] is not None:
+                d = int(payment_info['data'])
+                o = int(payment_info['orario'])
+                date = datetime(
+                    (d // 10000) % 10000, (d // 100) % 100, (d // 1) % 100,
+                    (o // 10000) % 100, (o // 100) % 100, (o // 1) % 100
+                ).strftime("%Y-%m-%d %H:%M:%S")
+            if payment_info['divisa'] is not None and payment_info['importo'] is not None:
+                i = int(payment_info['importo'])
+                d = payment_info['divisa']
+                amount = f"{d} {i // 100}.{i % 100}" 
+            if payment_info["pan"] is not None and payment_info["scadenza_pan"] is not None:
+                p = payment_info["pan"]
+                e = payment_info["scadenza_pan"]
+                cardInfo = f"{p} - {e[:4]}/{e[4:6]}"
         ctx = {
             "request": request,
             "event": self.event,
@@ -262,6 +281,9 @@ class XPayPaymentProvider(BasePaymentProvider):
             "payment_info": payment_info,
             "payment": payment,
             "provider": self,
+            "date": date,
+            "amount": amount,
+            "cardInfo": cardInfo
         }
         return template.render(ctx)
 

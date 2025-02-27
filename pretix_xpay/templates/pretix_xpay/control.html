@@ -2,25 +2,49 @@
 
 {% if payment_info %}
 	<dl class="dl-horizontal">
-		{% if "PAYID" in payment_info %}
-			<dt>{% trans "Payment ID" %}</dt>
-			<dd>{{ payment_info.PAYID }}</dd>
+		{% if "codTrans" in payment_info %}
+			<dt>{% trans "Transaction code" %}</dt>
+			<dd>{{ payment_info.codTrans }}</dd>
 		{% endif %}
-		{% if "PM" in payment_info %}
-			<dt>{% trans "Payment method" %}</dt>
-			<dd>{{ payment_info.PM }}</dd>
+		{% if "brand" in payment_info and "tipoProdotto" in payment_info %}
+			<dt>{% trans "Card brand and type" %}</dt>
+			<dd>{{ payment_info.brand }} / {{ payment_info.tipoProdotto }}</dd>
 		{% endif %}
-		{% if "BRAND" in payment_info %}
-			<dt>{% trans "Payment brand" %}</dt>
-			<dd>{{ payment_info.BRAND }}</dd>
+		{% if cardInfo %}
+			<dt>{% trans "Card number(s)" %}</dt>
+			<dd>{{ cardInfo }}</dd>
 		{% endif %}
-		{% if "CARDNO" in payment_info %}
-			<dt>{% trans "Card number" %}</dt>
-			<dd>{{ payment_info.CARDNO }}</dd>
+		{% if "alias" in payment_info %}
+			<dt>{% trans "XPay alias" %}</dt>
+			<dd>{{ payment_info.alias }}</dd>
 		{% endif %}
-		{% if "STATUS" in payment_info %}
-			<dt>{% trans "Status" %}</dt>
-			<dd>{{ payment_info.STATUS }}</dd>
+		{% if "codAut" in payment_info and "tipoTransazione" in payment_info %}
+			<dt>{% trans "AuthCode - tr.type" %}</dt>
+			<dd>{{ payment_info.codAut }} - {{ payment_info.tipoTransazione }}</dd>
+		{% endif %}
+		{% if date %}
+			<dt>{% trans "Date and time" %}</dt>
+			<dd>{{ date }}</dd>
+		{% endif %}
+		{% if "descrizione" in payment_info %}
+			<dt>{% trans "Description" %}</dt>
+			<dd>{{ payment_info.descrizione }}</dd>
+		{% endif %}
+		{% if amount %}
+			<dt>{% trans "Amount" %}</dt>
+			<dd>{{ amount }}</dd>
+		{% endif %}
+		{% if "nome" in payment_info and "cognome" in payment_info %}
+			<dt>{% trans "First and last name" %}</dt>
+			<dd>{{ payment_info.cognome }} - {{ payment_info.nome }}</dd>
+		{% endif %}
+		{% if "mail" in payment_info %}
+			<dt>{% trans "Email" %}</dt>
+			<dd>{{ payment_info.mail }}</dd>
+		{% endif %}
+		{% if "languageId" in payment_info and "nazionalita" in payment_info %}
+			<dt>{% trans "Country and lang" %}</dt>
+			<dd>{{ payment_info.nazionalita }} / {{ payment_info.languageId }}</dd>
 		{% endif %}
 	</dl>
 {% endif %}
