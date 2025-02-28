@@ -137,14 +137,12 @@ class OrderOperation:
         self.status = data["stato"]
         # 2024-07-25 12:41:47.0
         # By docs this should only contains the date, but in prod it contains everything
-        if ("-" in data["dataOperazione"]):
+        if "-" in data["dataOperazione"]:
             self.timestamp = datetime.strptime(
                 data["dataOperazione"], "%Y-%m-%d %H:%M:%S.%f"
             )
         else:
-            self.timestamp = datetime.strptime(
-                data["dataOperazione"], "%Y-%m-%d"
-            )
+            self.timestamp = datetime.strptime(data["dataOperazione"], "%Y-%m-%d")
         self.full_data = data
 
 
@@ -252,7 +250,7 @@ class OrderStatus:
             return 3
         elif status in XPAY_RESULT_CAPTURED:
             return 4
-        
+
     def findBestReport(self) -> OrderReport:
         val = -1
         retReport = None
@@ -267,19 +265,21 @@ class OrderStatus:
     def status(self) -> str:
         report = self.findBestReport()
         return "-" if report is None else report.status
-    
-    def updatePaymentInformation(self, payment: OrderPayment, provider: BasePaymentProvider):
-        info = {
-            "alias": get_alias_key(provider)
-        }
+
+    def updatePaymentInformation(
+        self, payment: OrderPayment, provider: BasePaymentProvider
+    ):
+        info = {"alias": get_alias_key(provider)}
         report: OrderReport = self.findBestReport()
-        if (report is not None):
+        if report is not None:
             date = datetime.strptime(
                 report.full_data["dataTransazione"], "%Y-%m-%d %H:%M:%S.%f"
             )
             # Shitty-ass code, but the api is as bad
             descrizione: str = report.full_data["parametri"]
-            descrizione = [] if descrizione is None else descrizione.split("descrizione=")
+            descrizione = (
+                [] if descrizione is None else descrizione.split("descrizione=")
+            )
 
             info = {
                 **info,
@@ -288,7 +288,9 @@ class OrderStatus:
                 "codTrans": report.full_data["codiceTransazione"],
                 "data": date.strftime("%Y%m%d"),
                 "orario": date.strftime("%H%M%S"),
-                "descrizione": descrizione[1].split("&")[0] if len(descrizione) > 1 else "-",
+                "descrizione": (
+                    descrizione[1].split("&")[0] if len(descrizione) > 1 else "-"
+                ),
                 "divisa": report.full_data["divisa"],
                 "importo": report.full_data["importo"],
                 "languageId": report.full_data["nazione"],
@@ -298,10 +300,10 @@ class OrderStatus:
                 "pan": report.full_data["pan"],
                 "scadenza_pan": report.full_data["scadenza"],
                 "tipoProdotto": report.full_data["tipoProdotto"],
-                "tipoTransazione": report.full_data["tipoTransazione"]
+                "tipoTransazione": report.full_data["tipoTransazione"],
             }
-            
-            if (report.details is not None):
+
+            if report.details is not None:
                 details = report.details
                 info = {
                     **info,

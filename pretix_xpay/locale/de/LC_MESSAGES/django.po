@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-25 23:54+0100\n"
+"POT-Creation-Date: 2025-02-27 19:00+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: pretix_xpay/apps.py:17 pretix_xpay/payment.py:31
+#: pretix_xpay/apps.py:17 pretix_xpay/payment.py:32
 msgid "XPay"
 msgstr ""
 
@@ -30,75 +30,75 @@ msgid ""
 "track of the payments made through this plugin!"
 msgstr ""
 
-#: pretix_xpay/payment.py:32
+#: pretix_xpay/payment.py:33
 msgid "Pay through XPay"
 msgstr ""
 
-#: pretix_xpay/payment.py:47
+#: pretix_xpay/payment.py:48
 msgid "XPay's Alias key"
 msgstr ""
 
-#: pretix_xpay/payment.py:49
+#: pretix_xpay/payment.py:50
 msgid "Check your backoffice area to recover the Alias value."
 msgstr ""
 
-#: pretix_xpay/payment.py:57
+#: pretix_xpay/payment.py:58
 msgid "Mac's hash algorithm"
 msgstr ""
 
-#: pretix_xpay/payment.py:63
+#: pretix_xpay/payment.py:64
 msgid ""
 "By default it is set to SHA-1, contact XPay's support in order to use "
 "SHA-256."
 msgstr ""
 
-#: pretix_xpay/payment.py:70
+#: pretix_xpay/payment.py:71
 msgid "Mac Secret"
 msgstr ""
 
-#: pretix_xpay/payment.py:72
+#: pretix_xpay/payment.py:73
 msgid ""
 "Check your backoffice area to recover the mac secret value. It is used to "
 "secure the hash"
 msgstr ""
 
-#: pretix_xpay/payment.py:80
+#: pretix_xpay/payment.py:81
 msgid "TEST - XPay's Alias key"
 msgstr ""
 
-#: pretix_xpay/payment.py:82
+#: pretix_xpay/payment.py:83
 msgid ""
 "Check your backoffice area to recover the Alias value. This is used ONLY "
 "when the event is in test mode. If not set, it will fallback to the default "
 "Alias key."
 msgstr ""
 
-#: pretix_xpay/payment.py:92
+#: pretix_xpay/payment.py:93
 msgid "TEST - Mac Secret"
 msgstr ""
 
-#: pretix_xpay/payment.py:94
+#: pretix_xpay/payment.py:95
 msgid ""
 "Check your backoffice area to recover the mac secret value. It is used to "
 "secure the hashThis is used ONLY when the event is in test mode. If not set, "
 "it will fallback to the default Mac secret."
 msgstr ""
 
-#: pretix_xpay/payment.py:104
+#: pretix_xpay/payment.py:105
 msgid "Order id salt"
 msgstr ""
 
-#: pretix_xpay/payment.py:106
+#: pretix_xpay/payment.py:107
 msgid ""
 "To generate xpay order ids we need a random, secret string to prevent "
 "malicious users from generating fake order ids. "
 msgstr ""
 
-#: pretix_xpay/payment.py:115
+#: pretix_xpay/payment.py:116
 msgid "Pending order timeout (mins)"
 msgstr ""
 
-#: pretix_xpay/payment.py:120
+#: pretix_xpay/payment.py:121
 msgid ""
 "Pending and newly created payment orders are refreshed with regular "
 "intervals, to check if the user have actually paid, but left the process of "
@@ -106,27 +106,27 @@ msgid ""
 "the payment should be considered over and should be marked as expired."
 msgstr ""
 
-#: pretix_xpay/payment.py:129
+#: pretix_xpay/payment.py:130
 msgid "Failed payments email address"
 msgstr ""
 
-#: pretix_xpay/payment.py:131
+#: pretix_xpay/payment.py:132
 msgid ""
 "Enter an email address recipient for manual verification requests. It might "
 "happen because of a failed refund request, or an already charged payment."
 msgstr ""
 
-#: pretix_xpay/payment.py:139
+#: pretix_xpay/payment.py:140
 msgid "Enable test endpoints"
 msgstr ""
 
-#: pretix_xpay/payment.py:141
+#: pretix_xpay/payment.py:142
 msgid ""
 "This enables the endpoints /poll_pending_payments and /"
 "test_manual_refund_email for events in testmode"
 msgstr ""
 
-#: pretix_xpay/payment.py:155
+#: pretix_xpay/payment.py:156
 #, python-brace-format
 msgid ""
 "The XPay plugin is operating in test mode. No money will actually be "
@@ -138,7 +138,7 @@ msgstr ""
 msgid "XPay reported an event (Status {status})."
 msgstr ""
 
-#: pretix_xpay/signals.py:107
+#: pretix_xpay/signals.py:115
 msgid "Payment in refund or canceled state"
 msgstr ""
 
@@ -155,23 +155,47 @@ msgid "You need to turn on JavaScript for this payment method to work."
 msgstr ""
 
 #: pretix_xpay/templates/pretix_xpay/control.html:6
-msgid "Payment ID"
+msgid "Transaction code"
 msgstr ""
 
 #: pretix_xpay/templates/pretix_xpay/control.html:10
-msgid "Payment method"
+msgid "Card brand and type"
 msgstr ""
 
 #: pretix_xpay/templates/pretix_xpay/control.html:14
-msgid "Payment brand"
+msgid "Card number(s)"
 msgstr ""
 
 #: pretix_xpay/templates/pretix_xpay/control.html:18
-msgid "Card number"
+msgid "XPay alias"
 msgstr ""
 
 #: pretix_xpay/templates/pretix_xpay/control.html:22
-msgid "Status"
+msgid "AuthCode - tr.type"
+msgstr ""
+
+#: pretix_xpay/templates/pretix_xpay/control.html:26
+msgid "Date and time"
+msgstr ""
+
+#: pretix_xpay/templates/pretix_xpay/control.html:30
+msgid "Description"
+msgstr ""
+
+#: pretix_xpay/templates/pretix_xpay/control.html:34
+msgid "Amount"
+msgstr ""
+
+#: pretix_xpay/templates/pretix_xpay/control.html:38
+msgid "First and last name"
+msgstr ""
+
+#: pretix_xpay/templates/pretix_xpay/control.html:42
+msgid "Email"
+msgstr ""
+
+#: pretix_xpay/templates/pretix_xpay/control.html:46
+msgid "Country and lang"
 msgstr ""
 
 #: pretix_xpay/templates/pretix_xpay/pending.html:5
@@ -234,7 +258,7 @@ msgstr ""
 msgid "Could not parse operation."
 msgstr ""
 
-#: pretix_xpay/utils.py:170 pretix_xpay/utils.py:182 pretix_xpay/utils.py:225
+#: pretix_xpay/utils.py:175 pretix_xpay/utils.py:188 pretix_xpay/utils.py:232
 #, python-format
 msgid "Could not parse order %s"
 msgstr ""

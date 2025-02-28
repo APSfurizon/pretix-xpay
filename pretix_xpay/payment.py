@@ -259,18 +259,37 @@ class XPayPaymentProvider(BasePaymentProvider):
         amount = None
         cardInfo = None
         if payment_info is not None:
-            if payment_info['data'] is not None and payment_info['orario'] is not None:
-                d = int(payment_info['data'])
-                o = int(payment_info['orario'])
+            if (
+                "data" in payment_info
+                and payment_info["data"] is not None
+                and "orario" in payment_info
+                and payment_info["orario"] is not None
+            ):
+                d = int(payment_info["data"])
+                o = int(payment_info["orario"])
                 date = datetime(
-                    (d // 10000) % 10000, (d // 100) % 100, (d // 1) % 100,
-                    (o // 10000) % 100, (o // 100) % 100, (o // 1) % 100
+                    (d // 10000) % 10000,
+                    (d // 100) % 100,
+                    (d // 1) % 100,
+                    (o // 10000) % 100,
+                    (o // 100) % 100,
+                    (o // 1) % 100,
                 ).strftime("%Y-%m-%d %H:%M:%S")
-            if payment_info['divisa'] is not None and payment_info['importo'] is not None:
-                i = int(payment_info['importo'])
-                d = payment_info['divisa']
-                amount = f"{d} {i // 100}.{i % 100}" 
-            if payment_info["pan"] is not None and payment_info["scadenza_pan"] is not None:
+            if (
+                "divisa" in payment_info
+                and payment_info["divisa"] is not None
+                and "importo" in payment_info
+                and payment_info["importo"] is not None
+            ):
+                i = int(payment_info["importo"])
+                d = payment_info["divisa"]
+                amount = f"{d} {i // 100}.{i % 100}"
+            if (
+                "pan" in payment_info
+                and payment_info["pan"] is not None
+                and "scadenza_pan" in payment_info
+                and payment_info["scadenza_pan"] is not None
+            ):
                 p = payment_info["pan"]
                 e = payment_info["scadenza_pan"]
                 cardInfo = f"{p} - {e[:4]}/{e[4:6]}"
@@ -283,7 +302,7 @@ class XPayPaymentProvider(BasePaymentProvider):
             "provider": self,
             "date": date,
             "amount": amount,
-            "cardInfo": cardInfo
+            "cardInfo": cardInfo,
         }
         return template.render(ctx)
 
