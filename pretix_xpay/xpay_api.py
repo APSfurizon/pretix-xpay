@@ -500,7 +500,11 @@ def refund(
     }
 
     try:
-        result = post_api_call(provider, ENDPOINT_ORDERS_REFUND, body)
+        if provider.settings.enable_refunds:
+            result = post_api_call(provider, ENDPOINT_ORDERS_REFUND, body)
+        else:
+            logger.error("xpay_api.refund was called but refunds are disabled.")
+            raise Exception("Refunds are disabled")
     except Exception as e:
         logger.error(
             f"XPAY_refund [{refund.payment.full_id}@{refund.full_id}]: POST call failed: {repr(e)}"

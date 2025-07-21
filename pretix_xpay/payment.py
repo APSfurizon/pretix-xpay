@@ -8,7 +8,7 @@ from django.template.loader import get_template
 from django.utils.translation import gettext_lazy as _
 from pretix.base.forms import SecretKeySettingsField
 from pretix.base.models import Event, OrderPayment, OrderRefund
-from pretix.base.payment import BasePaymentProvider
+from pretix.base.payment import BasePaymentProvider, PaymentException
 from pretix.multidomain.urlreverse import eventreverse
 
 import pretix_xpay.xpay_api as xpay
@@ -42,6 +42,19 @@ class XPayPaymentProvider(BasePaymentProvider):
     @property
     def settings_form_fields(self):
         fields = [
+            (
+                "enable_refunds",
+                forms.BooleanField(
+                    label=_("Enable full and partial refunds"),
+                    help_text=_(
+                        "If this is set to true, this payment provider will issue refunds towards XPay, "
+                        "effectively sending money back to the customer automatically. "
+                        "It is reccommended to disable this once you don't expect any more refunds, "
+                        "to provent accidental money to be trasfered back to customers."
+                    ),
+                    required=False,
+                ),
+            ),
             (
                 "alias_key",  # Will be used to identify the merchant during api calls
                 forms.CharField(
@@ -357,7 +370,13 @@ class XPayPaymentProvider(BasePaymentProvider):
 
     def execute_refund(self, refund: OrderRefund):
         """Executes a partial or full refund request"""
-        xpay.refund(refund, self)
+        settings = get_settings_object(refund.order.event)
+        if not settings.enable_refunds:
+            raise PaymentException(
+                "Refunds are not enabled for this event. Please contact the event organizer."
+            )
+        else:
+            xpay.refund(refund, self)
         refund.save()
         refund.done()
 
@@ -367,10 +386,12 @@ class XPayPaymentProvider(BasePaymentProvider):
     #    return "xpay"
 
     def payment_refund_supported(self, payment: OrderPayment) -> bool:
-        return True
+        settings = get_settings_object(payment.order.event)
+        return settings.enable_refunds
 
     def payment_partial_refund_supported(self, payment: OrderPayment) -> bool:
-        return True
+        settings = get_settings_object(payment.order.event)
+        return settings.enable_refunds
 
     def payment_prepare(self, request, payment):
         return self.checkout_prepare(request, None)

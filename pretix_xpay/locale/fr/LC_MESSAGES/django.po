@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-27 19:00+0100\n"
+"POT-Creation-Date: 2025-07-21 16:25+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -35,70 +35,82 @@ msgid "Pay through XPay"
 msgstr ""
 
 #: pretix_xpay/payment.py:48
-msgid "XPay's Alias key"
+msgid "Enable full and partial refunds"
 msgstr ""
 
 #: pretix_xpay/payment.py:50
+msgid ""
+"If this is set to true, this payment provider will issue refunds towards "
+"XPay, effectively sending money back to the customer automatically. It is "
+"reccommended to disable this once you don't expect any more refunds, to "
+"provent accidental money to be trasfered back to customers."
+msgstr ""
+
+#: pretix_xpay/payment.py:61
+msgid "XPay's Alias key"
+msgstr ""
+
+#: pretix_xpay/payment.py:63
 msgid "Check your backoffice area to recover the Alias value."
 msgstr ""
 
-#: pretix_xpay/payment.py:58
+#: pretix_xpay/payment.py:71
 msgid "Mac's hash algorithm"
 msgstr ""
 
-#: pretix_xpay/payment.py:64
+#: pretix_xpay/payment.py:77
 msgid ""
 "By default it is set to SHA-1, contact XPay's support in order to use "
 "SHA-256."
 msgstr ""
 
-#: pretix_xpay/payment.py:71
+#: pretix_xpay/payment.py:84
 msgid "Mac Secret"
 msgstr ""
 
-#: pretix_xpay/payment.py:73
+#: pretix_xpay/payment.py:86
 msgid ""
 "Check your backoffice area to recover the mac secret value. It is used to "
 "secure the hash"
 msgstr ""
 
-#: pretix_xpay/payment.py:81
+#: pretix_xpay/payment.py:94
 msgid "TEST - XPay's Alias key"
 msgstr ""
 
-#: pretix_xpay/payment.py:83
+#: pretix_xpay/payment.py:96
 msgid ""
 "Check your backoffice area to recover the Alias value. This is used ONLY "
 "when the event is in test mode. If not set, it will fallback to the default "
 "Alias key."
 msgstr ""
 
-#: pretix_xpay/payment.py:93
+#: pretix_xpay/payment.py:106
 msgid "TEST - Mac Secret"
 msgstr ""
 
-#: pretix_xpay/payment.py:95
+#: pretix_xpay/payment.py:108
 msgid ""
 "Check your backoffice area to recover the mac secret value. It is used to "
 "secure the hashThis is used ONLY when the event is in test mode. If not set, "
 "it will fallback to the default Mac secret."
 msgstr ""
 
-#: pretix_xpay/payment.py:105
+#: pretix_xpay/payment.py:118
 msgid "Order id salt"
 msgstr ""
 
-#: pretix_xpay/payment.py:107
+#: pretix_xpay/payment.py:120
 msgid ""
 "To generate xpay order ids we need a random, secret string to prevent "
 "malicious users from generating fake order ids. "
 msgstr ""
 
-#: pretix_xpay/payment.py:116
+#: pretix_xpay/payment.py:129
 msgid "Pending order timeout (mins)"
 msgstr ""
 
-#: pretix_xpay/payment.py:121
+#: pretix_xpay/payment.py:134
 msgid ""
 "Pending and newly created payment orders are refreshed with regular "
 "intervals, to check if the user have actually paid, but left the process of "
@@ -106,27 +118,27 @@ msgid ""
 "the payment should be considered over and should be marked as expired."
 msgstr ""
 
-#: pretix_xpay/payment.py:130
+#: pretix_xpay/payment.py:143
 msgid "Failed payments email address"
 msgstr ""
 
-#: pretix_xpay/payment.py:132
+#: pretix_xpay/payment.py:145
 msgid ""
 "Enter an email address recipient for manual verification requests. It might "
 "happen because of a failed refund request, or an already charged payment."
 msgstr ""
 
-#: pretix_xpay/payment.py:140
+#: pretix_xpay/payment.py:153
 msgid "Enable test endpoints"
 msgstr ""
 
-#: pretix_xpay/payment.py:142
+#: pretix_xpay/payment.py:155
 msgid ""
 "This enables the endpoints /poll_pending_payments and /"
 "test_manual_refund_email for events in testmode"
 msgstr ""
 
-#: pretix_xpay/payment.py:156
+#: pretix_xpay/payment.py:169
 #, python-brace-format
 msgid ""
 "The XPay plugin is operating in test mode. No money will actually be "
@@ -372,7 +384,7 @@ msgid ""
 "\"%s\""
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:393 pretix_xpay/xpay_api.py:534
+#: pretix_xpay/xpay_api.py:393 pretix_xpay/xpay_api.py:538
 #, python-format
 msgid "Invalid parameter \"esito\" (%s) for %s."
 msgstr ""
@@ -382,7 +394,7 @@ msgstr ""
 msgid "Unable to validate the order status for %s."
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:510
+#: pretix_xpay/xpay_api.py:514
 #, python-format
 msgid ""
 "An error occurred with the XPay's servers while refunding the order. Contact "
@@ -391,16 +403,16 @@ msgid ""
 "remember the transaction code #%s. Exception: %s"
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:522
+#: pretix_xpay/xpay_api.py:526
 #, python-format
 msgid "Unable to refund payment %s. Error code: %d. Error message: \"%s\""
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:551
+#: pretix_xpay/xpay_api.py:555
 #, python-format
 msgid "Unable to validate refund response for %s."
 msgstr ""
 
-#: pretix_xpay/xpay_api.py:570
+#: pretix_xpay/xpay_api.py:574
 msgid "Could not reach payment provider."
 msgstr ""
