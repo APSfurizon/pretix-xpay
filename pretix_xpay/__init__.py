@@ -1,1 +1,5 @@
-__version__ = "0.18.20250721"
+__version__ = "1.0.20251019"
+
+import logging
+
+logging.getLogger(__package__).setLevel(logging.DEBUG)
