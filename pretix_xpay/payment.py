@@ -22,7 +22,7 @@ from pretix_xpay.constants import (
     XPAY_RESULT_PENDING,
     XPAY_RESULT_REFUNDED,
 )
-from pretix_xpay.utils import get_settings_object, send_refund_needed_email
+from pretix_xpay.utils import get_settings_object, send_refund_needed_email, is_refund_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -371,7 +371,8 @@ class XPayPaymentProvider(BasePaymentProvider):
     def execute_refund(self, refund: OrderRefund):
         """Executes a partial or full refund request"""
         settings = get_settings_object(refund.order.event)
-        if not settings.enable_refunds:
+        enabled = is_refund_enabled(settings)
+        if not enabled:
             raise PaymentException(
                 "Refunds are not enabled for this event. Please contact the event organizer."
             )
@@ -387,11 +388,15 @@ class XPayPaymentProvider(BasePaymentProvider):
 
     def payment_refund_supported(self, payment: OrderPayment) -> bool:
         settings = get_settings_object(payment.order.event)
-        return settings.enable_refunds
+        enabled = is_refund_enabled(settings)
+        logger.debug(f"Order {payment.order.code} event {payment.order.event.slug} refund enabled: {enabled}. Type: {type(enabled)}")
+        return enabled
 
     def payment_partial_refund_supported(self, payment: OrderPayment) -> bool:
         settings = get_settings_object(payment.order.event)
-        return settings.enable_refunds
+        enabled = is_refund_enabled(settings)
+        logger.debug(f"Order {payment.order.code} event {payment.order.event.slug} partialrefund enabled: {enabled}. Type: {type(enabled)}")
+        return enabled
 
     def payment_prepare(self, request, payment):
         return self.checkout_prepare(request, None)

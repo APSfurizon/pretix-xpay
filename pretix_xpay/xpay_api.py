@@ -24,6 +24,7 @@ from pretix_xpay.utils import (
     get_xpay_api_url,
     send_refund_needed_email,
     translate_language,
+    is_refund_enabled
 )
 
 logger = logging.getLogger(__name__)
@@ -500,7 +501,9 @@ def refund(
     }
 
     try:
-        if provider.settings.enable_refunds:
+        enabled = is_refund_enabled(provider.settings)
+        logger.debug(f"xpay_api.refund called. Refunds enabled: {enabled}")
+        if enabled:
             result = post_api_call(provider, ENDPOINT_ORDERS_REFUND, body)
         else:
             logger.error("xpay_api.refund was called but refunds are disabled.")

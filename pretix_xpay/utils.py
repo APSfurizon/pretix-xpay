@@ -23,6 +23,17 @@ from pretix_xpay.constants import (
 logger = logging.getLogger(__name__)
 
 
+def is_refund_enabled(settings: SettingsSandbox) -> bool:
+    enabled = settings.enable_refunds
+    if enabled is None:
+        return False
+    if isinstance(enabled, bool):
+        return enabled
+    if isinstance(enabled, str):
+        return enabled.lower() in ["true", "1", "yes"]
+    return False
+
+
 def get_xpay_api_url(provider: BasePaymentProvider):
     return TEST_URL if provider.event.testmode else PROD_URL
 
