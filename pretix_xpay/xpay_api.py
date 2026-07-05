@@ -4,7 +4,7 @@ from django.http import Http404, HttpRequest
 from django.utils.translation import gettext_lazy as _
 from pretix.base.models import Order, OrderPayment, OrderRefund, Quota
 from pretix.base.payment import PaymentException
-from pretix.multidomain.urlreverse import build_absolute_uri
+from pretix.multidomain.urlreverse import eventreverse_absolute
 from time import time
 
 from pretix_xpay.constants import (
@@ -54,7 +54,7 @@ def initialize_payment_get_params(
         "importo": amount,
         "divisa": "EUR",
         "codTrans": transaction_code,
-        "url": build_absolute_uri(
+        "url": eventreverse_absolute(
             provider.event,
             "plugins:pretix_xpay:return",
             kwargs={
@@ -64,7 +64,7 @@ def initialize_payment_get_params(
                 "result": "ok",
             },
         ),
-        "url_back": build_absolute_uri(
+        "url_back": eventreverse_absolute(
             provider.event,
             "plugins:pretix_xpay:return",
             kwargs={
